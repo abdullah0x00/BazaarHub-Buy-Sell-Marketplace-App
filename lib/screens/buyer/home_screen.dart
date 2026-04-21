@@ -137,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Main Grid
+                // Main Grid (excluding flash sale & recommended products)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverGrid(
@@ -148,8 +148,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSpacing: 14,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => ProductCard(product: products.products[i]),
-                      childCount: products.products.length,
+                      (ctx, i) {
+                        final filteredProducts = products.products
+                            .where((p) =>
+                                !products.flashSale.contains(p) &&
+                                !products.recommended.contains(p))
+                            .toList();
+                        return ProductCard(product: filteredProducts[i]);
+                      },
+                      childCount: products.products
+                          .where((p) =>
+                              !products.flashSale.contains(p) &&
+                              !products.recommended.contains(p))
+                          .length,
                     ),
                   ),
                 ),

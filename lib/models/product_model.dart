@@ -218,19 +218,74 @@ class ProductModel {
 
   static String _getMockImage(String category, int index) {
     final Map<String, List<String>> categoryImages = {
-      'Electronics': ['1498417399914-77a67f2c0da3', '1511707171634-5f897ff02aa9', '1523275319445-537f13904940', '1505740420928-5e560c06d30e', '1527443224154-c4a3942d3acf'],
-      'Fashion': ['1445204450373-1971cc097364', '1556906781-9a079e000490', '1539106642014-14838703080c', '1467043237213-65f2da53396f', '1523293182036-711dad1faff7'],
-      'Home & Living': ['1484101402968-3d11defcd53c', '1586023492125-27b2c045efd7', '1513519245088-0e12902e5a38', '1556911227-8a17d43ef7f2', '1583847268964-b28dc2f51ac9'],
-      'Sports': ['1517836357463-d25dfeac3438', '1534438327276-14e5300c3a48', '1544111823-46037dd3c178', '1461896836934-ffe607ba8211', '1517649763962-0c623066013b'],
-      'Beauty': ['1594465919561-3a0553754e81', '1512496015851-a90fb38ba796', '1522335789203-aabd1fc54bc9', '1596462502278-27bfaf43e218', '1571781926291-c477ebfd024b'],
-      'Books': ['1495446815901-a7297e633e8d', '1544947950-fac0720738f7', '1512820790803-83ca734da794', '1497633762265-9d1792697a61', '1521587760476-6c12a4b040da'],
-      'Toys': ['1515488764276-beab7607c1e6', '1558060302-3c4ef497fb05', '1535572290543-8e0c4039865e', '1566576721346-d4a3b4ea30df', '1596461404482-4efe4bb17886'],
-      'Vehicles': ['1494976388531-d1058494cdd8', '1503376780353-7e6692767b70', '1533473359331-0135ef1b58bf', '1558981403-c5f91cbba527', '1493238541991-81827fa6a0fa'],
-      'Food': ['1504674900247-0877df9cc836', '1476224203421-9ac3993c4c9b', '1473093226795-af9932fe5856', '1567622646695-4655f4633775', '1565299624946-b28f40a0ae38'],
+      'Electronics': [
+        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Fashion': [
+        'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1595777707802-51ca6f37b7d5?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Home & Living': [
+        'https://images.unsplash.com/photo-1491554895235-0ac8ac844b3b?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1503387762519-52582b8b29b7?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1578500494198-246f612d03b3?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Sports': [
+        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1535743686920-55e06d675b0a?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1552346154-ff0a9b0d596d?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1449505278894-297fdb3edbc1?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Beauty': [
+        'https://images.unsplash.com/photo-1596462502278-27bfaf43e218?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1512207736139-c814b5c51c28?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1597318972826-6a3dc29c0eaa?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Books': [
+        'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1507842217343-583f20270319?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1543002588-d83cea6bea2b?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Toys': [
+        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1596461404482-4efe4bb17886?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1595777707802-51ca6f37b7d5?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1566119114618-c71b4916b46e?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1566576721346-d4a3b4ea30df?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Vehicles': [
+        'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1558981403-c5f91cbba527?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1493238541991-81827fa6a0fa?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?auto=format&fit=crop&q=80&w=400',
+      ],
+      'Food': [
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1567622646695-4655f4633775?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1476224203421-9ac3993c4c9b?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400',
+      ],
     };
 
-    final List<String> ids = categoryImages[category] ?? ['1555066931-4365d14bab8c'];
-    final String photoId = ids[index % ids.length];
-    return 'https://images.unsplash.com/photo-$photoId?auto=format&fit=crop&q=80&w=400';
+    final List<String> urls = categoryImages[category] ?? [
+      'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=400'
+    ];
+    return urls[index % urls.length];
   }
 }
