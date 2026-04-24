@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -16,19 +17,62 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Timer? _timer;
+  Duration _timeLeft = const Duration(hours: 2, minutes: 45, seconds: 10);
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().loadHomeData();
     });
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft.inSeconds > 0) {
+        setState(() {
+          _timeLeft = _timeLeft - const Duration(seconds: 1);
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return "$hours:$minutes:$twoDigits(duration.inSeconds.remainder(60))";
+  }
+  
+  // Custom manual format to fix the string interpolation issue in logic
+  String _getTimerText() {
+    int h = _timeLeft.inHours;
+    int m = _timeLeft.inMinutes.remainder(60);
+    int s = _timeLeft.inSeconds.remainder(60);
+    return "${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final products = context.watch<ProductProvider>();
-
+    
+    final filteredProducts = products.products.where((p) {
+      return !products.flashSale.any((f) => f.id == p.id) &&
+          !products.recommended.any((r) => r.id == p.id);
+    }).toList();
+ 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -37,19 +81,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onRefresh: () => context.read<ProductProvider>().loadHomeData(),
           child: CustomScrollView(
             slivers: [
-              // Professional Header
               SliverToBoxAdapter(child: _buildAppBar(context, auth)),
-
-              // Search Bar with Filter
               SliverToBoxAdapter(child: _buildSearchBar(context)),
-
-              // Featured Banners
               SliverToBoxAdapter(child: _buildBannerSlider()),
-
-              // Categories Grid
               SliverToBoxAdapter(child: _buildCategories(context)),
 
-              // Flash Sale Section
               if (products.isLoading)
                 const SliverToBoxAdapter(
                   child: Padding(
@@ -79,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  _buildTimer(),
+                                  _buildTimerWidget(),
                                 ],
                               ),
                               TextButton(
@@ -91,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
-                          height: 240, // More compact for professional look
+                          height: 240,
                           child: ListView.separated(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             scrollDirection: Axis.horizontal,
@@ -104,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                // Popular Section
                 if (products.recommended.isNotEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
@@ -116,7 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                // All Products Header
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
@@ -137,30 +171,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Main Grid (excluding flash sale & recommended products)
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.72, // Adjusted for cleaner look
+                      childAspectRatio: 0.72,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (ctx, i) {
-                        final filteredProducts = products.products
-                            .where((p) =>
-                                !products.flashSale.contains(p) &&
-                                !products.recommended.contains(p))
-                            .toList();
-                        return ProductCard(product: filteredProducts[i]);
-                      },
-                      childCount: products.products
-                          .where((p) =>
-                              !products.flashSale.contains(p) &&
-                              !products.recommended.contains(p))
-                          .length,
+                      (ctx, i) => ProductCard(product: filteredProducts[i]),
+                      childCount: filteredProducts.length,
                     ),
                   ),
                 ),
@@ -336,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTimer() {
+  Widget _buildTimerWidget() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(6)),
@@ -344,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Icon(Icons.timer_outlined, color: Colors.red, size: 14),
           const SizedBox(width: 4),
-          Text('02:45:10', style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(_getTimerText(), style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
         ],
       ),
     );

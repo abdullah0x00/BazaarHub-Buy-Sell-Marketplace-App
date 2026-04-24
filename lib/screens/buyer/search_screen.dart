@@ -17,44 +17,41 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
-  final _debounce = ValueNotifier<String>('');
   bool _showFilters = false;
   String? _sortBy = 'Popularity';
 
   final List<String> _recent = [
-    'iPhone 15',
-    'Nike shoes',
-    'Samsung TV',
-    'Gaming Mouse'
+    'Smartphone',
+    'Shoes',
+    'Watch',
+    'Laptop'
   ];
   final List<String> _trending = [
-    'Wireless Earbuds',
+    'Wireless Buds',
     'Smart Watch',
     'Bluetooth Speaker',
-    'Mechanical Keyboard',
-    'Gaming Chair',
+    'Football',
+    'Sneakers',
   ];
 
   @override
   void initState() {
     super.initState();
-    _ctrl.addListener(() {
-      _debounce.value = _ctrl.text;
-      if (_ctrl.text.isNotEmpty) {
-        Future.delayed(const Duration(milliseconds: 400), () {
-          if (_ctrl.text == _debounce.value && mounted) {
-            context.read<ProductProvider>().search(_ctrl.text);
-          }
-        });
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().loadHomeData();
     });
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
-    _debounce.dispose();
     super.dispose();
+  }
+
+  void _onSearch(String query) {
+    if (query.trim().isEmpty) return;
+    context.read<ProductProvider>().search(query);
+    setState(() {});
   }
 
   void _openScanner() async {
@@ -65,27 +62,26 @@ class _SearchScreenState extends State<SearchScreen> {
     );
     if (result != null && result is String) {
       _ctrl.text = result;
-      // Trigger search
-      if (mounted) provider.search(result);
-      setState(() {});
+      _onSearch(result);
     }
   }
 
   void _openImageSearch() async {
     final messenger = ScaffoldMessenger.of(context);
-    final provider = context.read<ProductProvider>();
-
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.camera);
-    if (image != null) {
-      // simulate search by image
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Searching by image...')),
-      );
-      // for demo, search for "Gadget"
-      _ctrl.text = "Gadget";
-      if (mounted) provider.search("Gadget");
-      setState(() {});
+    
+    try {
+      final image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        messenger.showSnackBar(const SnackBar(content: Text('Analyzing image...')));
+        // Simulate finding an object in image
+        Future.delayed(const Duration(seconds: 1), () {
+           _ctrl.text = "Watch";
+           _onSearch("Watch");
+        });
+      }
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Camera error: $e')));
     }
   }
 
@@ -96,93 +92,47 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 2,
-                  offset: Offset(0, 1),
-                ),
-              ],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Container(
+          height: 45,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: TextField(
+            controller: _ctrl,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Search products...',
+              border: InputBorder.none,
+              prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   if (_ctrl.text.isNotEmpty) 
+                      IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () { _ctrl.clear(); setState(() {}); }),
+                   IconButton(icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20), onPressed: _openImageSearch),
+                ],
+              ),
+              contentPadding: const EdgeInsets.only(top: 10),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Row(
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(left: 12, right: 8),
-                          child: Icon(Icons.search, color: Colors.grey),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _ctrl,
-                            autofocus: true,
-                            decoration: const InputDecoration(
-                              hintText: 'Search in Marketplace...',
-                              border: InputBorder.none,
-                              hintStyle:
-                                  TextStyle(fontSize: 14, color: Colors.grey),
-                            ),
-                            onSubmitted: (q) =>
-                                context.read<ProductProvider>().search(q),
-                          ),
-                        ),
-                        if (hasQuery)
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () {
-                              _ctrl.clear();
-                              setState(() {});
-                            },
-                          )
-                        else ...[
-                          IconButton(
-                            icon: const Icon(Icons.qr_code_scanner,
-                                color: AppColors.primary, size: 20),
-                            onPressed: _openScanner,
-                            tooltip: 'Scan QR',
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.camera_alt_outlined,
-                                color: AppColors.primary, size: 20),
-                            onPressed: _openImageSearch,
-                            tooltip: 'Search by Image',
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () =>
-                      context.read<ProductProvider>().search(_ctrl.text),
-                  child: const Text('Search',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary)),
-                ),
-              ],
-            ),
+            onChanged: (v) => setState(() {}),
+            onSubmitted: _onSearch,
           ),
         ),
+        actions: [
+          IconButton(icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary), onPressed: _openScanner),
+          TextButton(
+            onPressed: () => _onSearch(_ctrl.text),
+            child: const Text('Search', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -199,45 +149,24 @@ class _SearchScreenState extends State<SearchScreen> {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[200]!))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Sort Dropdown (Mock)
           Row(
             children: [
-              const Icon(Icons.sort, size: 18, color: AppColors.textSecondary),
+              const Icon(Icons.sort, size: 18, color: Colors.grey),
               const SizedBox(width: 4),
-              DropdownButton<String>(
-                value: _sortBy,
-                underline: const SizedBox(),
-                items: [
-                  'Popularity',
-                  'Price: Low to High',
-                  'Price: High to Low',
-                  'Newest'
-                ]
-                    .map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Text(s, style: const TextStyle(fontSize: 12))))
-                    .toList(),
-                onChanged: (v) => setState(() => _sortBy = v),
-              ),
+              Text(_sortBy ?? 'Popularity', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
             ],
           ),
-          // Filter Button (Mock)
           InkWell(
             onTap: () => setState(() => _showFilters = !_showFilters),
             child: Row(
               children: [
-                const Text('Filter',
-                    style:
-                        TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                const Text('Filter', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                 const SizedBox(width: 4),
-                Icon(Icons.filter_list,
-                    size: 18,
-                    color: _showFilters
-                        ? AppColors.primary
-                        : AppColors.textSecondary),
+                Icon(Icons.filter_list, size: 18, color: _showFilters ? AppColors.primary : Colors.grey),
               ],
             ),
           ),
@@ -252,16 +181,16 @@ class _SearchScreenState extends State<SearchScreen> {
       return EmptyStateWidget(
         icon: Icons.search_off,
         title: 'No Results Found',
-        subtitle: 'We couldn\'t find any matches for "${_ctrl.text}".',
+        subtitle: 'No matches found for "${_ctrl.text}".',
       );
     }
     return GridView.builder(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
+        childAspectRatio: 0.7,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
       itemCount: products.searchResults.length,
       itemBuilder: (ctx, i) => ProductCard(product: products.searchResults[i]),
@@ -270,44 +199,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSuggestions() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Recent Searches',
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary),
-              ),
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.delete_outline,
-                      size: 20, color: Colors.grey)),
-            ],
-          ),
+          const Text('Recent Searches', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 10,
             runSpacing: 10,
             children: _recent.map((q) => _buildSearchChip(q)).toList(),
           ),
-          const SizedBox(height: 30),
-          const Text(
-            'Trending Searches',
-            style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 12),
-          ..._trending
-              .asMap()
-              .entries
-              .map((e) => _buildTrendingTile(e.key + 1, e.value)),
+          const SizedBox(height: 32),
+          const Text('Trending Now', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ..._trending.asMap().entries.map((e) => _buildTrendingTile(e.key + 1, e.value)),
         ],
       ),
     );
@@ -317,18 +223,12 @@ class _SearchScreenState extends State<SearchScreen> {
     return InkWell(
       onTap: () {
         _ctrl.text = text;
-        context.read<ProductProvider>().search(text);
-        setState(() {});
+        _onSearch(text);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(text,
-            style:
-                const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey[300]!)),
+        child: Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ),
     );
   }
@@ -336,22 +236,12 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildTrendingTile(int rank, String text) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 25,
-        alignment: Alignment.center,
-        child: Text('#$rank',
-            style: TextStyle(
-              color: rank <= 3 ? AppColors.primary : Colors.grey,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            )),
-      ),
+      leading: Text('#$rank', style: TextStyle(color: rank <= 3 ? AppColors.primary : Colors.grey, fontWeight: FontWeight.bold)),
       title: Text(text, style: const TextStyle(fontSize: 14)),
-      trailing: const Icon(Icons.trending_up, size: 18, color: Colors.grey),
+      trailing: const Icon(Icons.north_east, size: 16, color: Colors.grey),
       onTap: () {
         _ctrl.text = text;
-        context.read<ProductProvider>().search(text);
-        setState(() {});
+        _onSearch(text);
       },
     );
   }

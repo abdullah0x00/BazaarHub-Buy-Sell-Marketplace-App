@@ -1,115 +1,59 @@
 import '../models/product_model.dart';
 import '../models/review_model.dart';
 
-/// Simulated product service (replace with real API in production)
 class ProductService {
   static final ProductService _instance = ProductService._internal();
   factory ProductService() => _instance;
   ProductService._internal();
 
-  // Initialize with a wider range of products directly
-  final List<ProductModel> _products = ProductModel.mockProducts();
+  final List<ProductModel> _allProducts = ProductModel.mockProducts();
 
   Future<List<ProductModel>> getProducts({String? category}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(const Duration(milliseconds: 200));
 
-    // If no category, return all active products for the home page
-    if (category == null || category.isEmpty) {
-      return _products.where((p) => p.isActive).toList();
+    if (category == null || category.isEmpty || category == 'All') {
+      // Return products that are NOT flash sale and NOT high-rated (recommended)
+      // to avoid duplicates on the home screen sections.
+      return _allProducts.where((p) => !p.isFlashSale && p.rating < 4.8).toList();
     }
 
     final target = category.trim().toLowerCase();
-    
-    // Exact match or contains for categories
-    return _products.where((p) {
-      return p.isActive && (p.category.toLowerCase() == target || p.category.toLowerCase().contains(target));
-    }).toList();
+    return _allProducts.where((p) => p.category.toLowerCase() == target).toList();
   }
 
-  /// Get product by ID
+  Future<List<ProductModel>> getSellerProducts(String sellerId) async {
+    return _allProducts.where((p) => p.sellerId == sellerId).toList();
+  }
+
+  Future<List<ProductModel>> getFlashSaleProducts() async {
+    return _allProducts.where((p) => p.isFlashSale).toList();
+  }
+
+  Future<List<ProductModel>> getRecommendedProducts() async {
+    // Only high rated items
+    return _allProducts.where((p) => p.rating >= 4.8).toList();
+  }
+
+  Future<List<ProductModel>> searchProducts(String query) async {
+    final q = query.toLowerCase();
+    return _allProducts.where((p) => p.title.toLowerCase().contains(q)).toList();
+  }
+
   Future<ProductModel?> getProductById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
     try {
-      return _products.firstWhere((p) => p.id == id);
+      return _allProducts.firstWhere((p) => p.id == id);
     } catch (_) {
       return null;
     }
   }
 
-  /// Get flash sale products
-  Future<List<ProductModel>> getFlashSaleProducts() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _products.where((p) => p.isActive && p.isFlashSale).toList();
-  }
-
-  /// Get recommended products
-  Future<List<ProductModel>> getRecommendedProducts() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    // Products with high rating are recommended
-    return _products.where((p) => p.isActive && p.rating >= 4.5).toList();
-  }
-
-  /// Get products by seller
-  Future<List<ProductModel>> getSellerProducts(String sellerId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _products.where((p) => p.sellerId == sellerId).toList();
-  }
-
-  /// Search products by query
-  Future<List<ProductModel>> searchProducts(String query) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final q = query.toLowerCase();
-    return _products
-        .where(
-          (p) =>
-              p.isActive &&
-              (p.title.toLowerCase().contains(q) ||
-                  p.description.toLowerCase().contains(q) ||
-                  p.category.toLowerCase().contains(q)),
-        )
-        .toList();
-  }
-
-  /// Add a new product
-  Future<ProductModel> addProduct(ProductModel product) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    _products.add(product);
-    return product;
-  }
-
-  /// Update an existing product
-  Future<ProductModel> updateProduct(ProductModel product) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    final idx = _products.indexWhere((p) => p.id == product.id);
-    if (idx != -1) _products[idx] = product;
-    return product;
-  }
-
-  /// Delete a product
-  Future<void> deleteProduct(String productId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    _products.removeWhere((p) => p.id == productId);
-  }
-
-  /// Toggle product active status
-  Future<void> toggleProductStatus(String productId) async {
-    final idx = _products.indexWhere((p) => p.id == productId);
-    if (idx != -1) {
-      _products[idx] = _products[idx].copyWith(
-        isActive: !_products[idx].isActive,
-      );
-    }
-  }
-
-  /// Get all products (admin)
   Future<List<ProductModel>> getAllProducts() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _products;
+    return _allProducts;
   }
 
-  /// Get reviews for a product
-  Future<List<ReviewModel>> getProductReviews(String productId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return ReviewModel.mockReviews(productId);
-  }
+  // Dummy methods for compilation
+  Future<ProductModel> addProduct(ProductModel p) async => p;
+  Future<ProductModel> updateProduct(ProductModel p) async => p;
+  Future<void> deleteProduct(String id) async {}
+  Future<List<ReviewModel>> getProductReviews(String id) async => ReviewModel.mockReviews(id);
 }

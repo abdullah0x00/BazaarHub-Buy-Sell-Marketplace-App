@@ -1,5 +1,6 @@
-/// Product model for marketplace listings
 library;
+
+import 'package:flutter/foundation.dart';
 
 class ProductModel {
   final String id;
@@ -8,7 +9,7 @@ class ProductModel {
   final String title;
   final String description;
   final double price;
-  final double? originalPrice; // For discount display
+  final double? originalPrice;
   final List<String> images;
   final String category;
   final int stock;
@@ -38,7 +39,8 @@ class ProductModel {
     this.specifications,
   });
 
-  /// Calculate discount percentage
+  bool get inStock => stock > 0;
+  
   double? get discountPercent {
     if (originalPrice != null && originalPrice! > price) {
       return ((originalPrice! - price) / originalPrice! * 100).roundToDouble();
@@ -46,14 +48,13 @@ class ProductModel {
     return null;
   }
 
-  /// Get first image or placeholder
   String get coverImage {
-    if (images.isNotEmpty && images.first.startsWith('http')) return images.first;
-    return 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400'; // High-quality default placeholder
+    if (images.isNotEmpty && images.first.isNotEmpty) {
+      return images.first;
+    }
+    // Final safety fallback with unique seed
+    return 'https://picsum.photos/seed/$id/500/500';
   }
-
-  /// Is product in stock
-  bool get inStock => stock > 0;
 
   ProductModel copyWith({
     String? id,
@@ -93,199 +94,217 @@ class ProductModel {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'sellerId': sellerId,
-      'sellerName': sellerName,
-      'title': title,
-      'description': description,
-      'price': price,
-      'originalPrice': originalPrice,
-      'images': images,
-      'category': category,
-      'stock': stock,
-      'rating': rating,
-      'reviewCount': reviewCount,
-      'isActive': isActive,
-      'isFlashSale': isFlashSale,
-      'createdAt': createdAt.toIso8601String(),
-      'specifications': specifications,
-    };
-  }
-
-  factory ProductModel.fromJson(Map<String, dynamic> json) {
-    return ProductModel(
-      id: json['id'] ?? '',
-      sellerId: json['sellerId'] ?? '',
-      sellerName: json['sellerName'] ?? '',
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      price: (json['price'] ?? 0.0).toDouble(),
-      originalPrice: json['originalPrice']?.toDouble(),
-      images: List<String>.from(json['images'] ?? []),
-      category: json['category'] ?? '',
-      stock: json['stock'] ?? 0,
-      rating: (json['rating'] ?? 0.0).toDouble(),
-      reviewCount: json['reviewCount'] ?? 0,
-      isActive: json['isActive'] ?? true,
-      isFlashSale: json['isFlashSale'] ?? false,
-      createdAt: DateTime.parse(
-        json['createdAt'] ?? DateTime.now().toIso8601String(),
-      ),
-      specifications: json['specifications'] != null
-          ? Map<String, String>.from(json['specifications'])
-          : null,
-    );
-  }
-
-  /// Generate mock products for demo
   static List<ProductModel> mockProducts() {
     List<ProductModel> products = [];
+    
+    // 1. High-Quality Unique Image Mapping
+    final Map<String, String> itemImages = {
+      // Electronics
+      'iPhone 15 Pro': 'https://images.unsplash.com/photo-1696446702183-be8f5b85a397?w=500&fit=crop',
+      'MacBook Air M2': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&fit=crop',
+      'Sony Wireless Headphones': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&fit=crop',
+      'Samsung Galaxy S23': 'https://images.unsplash.com/photo-1678911820864-e2c567c655d7?w=500&fit=crop',
+      'Smart Watch Series 8': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&fit=crop',
+      'Gaming Mouse RGB': 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&fit=crop',
+      'Mechanical Keyboard': 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500&fit=crop',
+      '4K LED Monitor': 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&fit=crop',
+      'Power Bank 20000mAh': 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=500&fit=crop',
+      'HD Web Camera': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500&fit=crop',
 
-    // Categories to populate
-    final categories = [
-      'Electronics',
-      'Fashion',
-      'Home & Living',
-      'Sports',
-      'Beauty',
-      'Books',
-      'Toys',
-      'Vehicles',
-      'Food'
-    ];
+      // Fashion
+      'Summer Floral Dress': 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=500&fit=crop',
+      'Men Casual T-Shirt': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&fit=crop',
+      'Slim Fit Denim Jeans': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&fit=crop',
+      'Leather Wallet Black': 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=500&fit=crop',
+      'Canvas Sneakers White': 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&fit=crop',
+      'Winter Woolen Scarf': 'https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=500&fit=crop',
+      'Designer Sunglasses': 'https://images.unsplash.com/photo-1511499767390-903390e6fbc1?w=500&fit=crop',
+      'Classic Wrist Watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&fit=crop',
+      'Leather Handbag': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&fit=crop',
+      'Formal Office Shoes': 'https://images.unsplash.com/photo-1533279150534-a9ec71a0633b?w=500&fit=crop',
 
-    for (var category in categories) {
-      List<String> items = [];
-      String seller = 'BazaarHub Global';
-      double basePrice = 500.0;
+      // Home & Living
+      'Scented Soy Candle': 'https://images.unsplash.com/photo-1603006905003-be475563bc59?w=500&fit=crop',
+      'Modern Table Lamp': 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&fit=crop',
+      'Memory Foam Pillow': 'https://images.unsplash.com/photo-1520206111952-5ad74c60f4d7?w=500&fit=crop',
+      'Cotton Bed Sheet Set': 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=500&fit=crop',
+      'Silent Wall Clock': 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=500&fit=crop',
+      'Ceramic Indoor Plant Pot': 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=500&fit=crop',
+      'Non-stick Frying Pan': 'https://images.unsplash.com/photo-1584990333911-5ed0ad9c7e9d?w=500&fit=crop',
+      'Floral Shower Curtain': 'https://images.unsplash.com/photo-1600585154340-be6199f7a096?w=500&fit=crop',
+      'Velvet Throw Blanket': 'https://images.unsplash.com/photo-1515155075601-23009d0cb6d4?w=500&fit=crop',
+      'Kitchen Knife Set': 'https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500&fit=crop',
 
-      if (category == 'Food') {
-        items = ['Organic Honey', 'Premium Basmati Rice', 'Organic Green Tea', 'Roasted Cashews', 'Pure Olive Oil', 'Dark Chocolate Bar', 'Gourmet Coffee Beans', 'Healthy Granola Mix', 'Natural Almond Butter', 'Fresh Fruit Basket'];
-        seller = 'Fresh Mart';
-        basePrice = 150.0;
-      } else if (category == 'Vehicles') {
-        items = ['Mountain Bike Pro', 'Electric Scooter X', 'Kids Tricycle', 'Folding Bicycle', 'Adult Commuter Scooter', 'Balance Bike for Kids', 'BMX Freestyle Bike', 'Hybrid City Bike', 'Skateboard Maple Wood', 'Protective Gear Set'];
-        seller = 'Auto & Gear';
-        basePrice = 2000.0;
-      } else if (category == 'Electronics') {
-        items = ['Wireless Earbuds', 'Smartphone Z Cloud', 'Smart Watch Series 5', 'Bluetooth Speaker', 'Gaming Mouse RGB', 'Mechanical Keyboard', 'Laptop Stand Aluminum', 'Power Bank 20000mAh', 'HD Web Camera', 'Noise Canceling Headphones'];
-        basePrice = 1200.0;
-      } else if (category == 'Fashion') {
-        items = ['Cotton Slim Fit T-shirt', 'Denim Jacket Classic', 'Canvas Sneakers', 'Leather Wallet', 'Summer Floral Dress', 'Running Shorts', 'Knitted Winter Scarf', 'Polarized Sunglasses', 'Formal Leather Belt', 'Graphic Print Hoodie'];
-        basePrice = 800.0;
-      } else if (category == 'Home & Living') {
-        items = ['Scented Soy Candle', 'Ceramic Table Lamp', 'Memory Foam Pillow', 'Cotton Bed Sheet Set', 'Wall Clock Modern', 'Indoor Plant Pot', 'Non-stick Frying Pan', 'Shower Curtain Floral', 'Velvet Throw Blanket', 'Kitchen Knife Set'];
-        basePrice = 600.0;
-      } else if (category == 'Sports') {
-        items = ['Yoga Mat Anti-slip', 'Dumbbell Set 5kg', 'Basketball Official Size', 'Badminton Racket', 'Resistance Bands Set', 'Skipping Rope Pro', 'Sports Water Bottle', 'Gym Duffel Bag', 'Tennis Ball Pack', 'Football Champions League'];
-        basePrice = 400.0;
-      } else if (category == 'Beauty') {
-        items = ['Matte Lipstick Red', 'Moisturizing Cream', 'Organic Face Mask', 'Perfume Eau De Toilette', 'Makeup Brush Set', 'Hair Serum Silk', 'Sunscreen SPF 50', 'Eye Liner Waterproof', 'Nail Polish Pastel', 'Bath Bomb Lavender'];
-        basePrice = 300.0;
-      } else if (category == 'Books') {
-        items = ['The Great Mystery Novel', 'Modern Poetry Collection', 'Business Success Guide', 'Healthy Cooking Recipes', 'Historical Biography', 'Science Fiction Saga', 'Children\'s Bedtime Stories', 'Self-Help Masterclass', 'World Atlas 2024', 'Classic Literature Set'];
-        basePrice = 250.0;
-      } else if (category == 'Toys') {
-        items = ['Building Blocks Set', 'Remote Control Car', 'Stuffed Teddy Bear', 'Puzzle 1000 Pieces', 'Dolls House Wooden', 'Action Figure Hero', 'Board Game Strategy', 'Slime Kit DIY', 'Musical Toy Keyboard', 'Art and Craft Set'];
-        basePrice = 450.0;
-      }
+      // Sports
+      'Yoga Mat Anti-slip': 'https://images.unsplash.com/photo-1544111823-46037dd3c178?w=500&fit=crop',
+      'Dumbbells Set 5kg': 'https://images.unsplash.com/photo-1583454110551-21f2fa2ec617?w=500&fit=crop',
+      'Basketball Official Size': 'https://images.unsplash.com/photo-1519861531473-9200262188bf?w=500&fit=crop',
+      'Football Premium': 'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=500&fit=crop',
+      'Badminton Racket Pro': 'https://images.unsplash.com/photo-1617083270725-6743ff76ffcc?w=500&fit=crop',
+      'Sports Gym Bag': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&fit=crop',
+      'Water Bottle Stainless Steel': 'https://images.unsplash.com/photo-1602143303412-f195816da396?w=500&fit=crop',
+      'Skipping Rope Speed': 'https://images.unsplash.com/photo-1552346154-21d328109a27?w=500&fit=crop',
+      'Resistance Bands Set': 'https://images.unsplash.com/photo-1598266663336-0371994cca3f?w=500&fit=crop',
+      'Tennis Ball Pack': 'https://images.unsplash.com/photo-1592709823125-a1914b953a47?w=500&fit=crop',
 
-      for (int i = 0; i < items.length; i++) {
-        products.add(
-          ProductModel(
-            id: '${category.toLowerCase().replaceAll(' ', '_')}_${i + 1}',
-            sellerId: 'seller_${category.toLowerCase().substring(0, 3)}',
-            sellerName: seller,
-            title: items[i],
-            description: 'Experience the best quality with our ${items[i]}. Perfectly designed for your needs and durably built to last.',
-            price: (basePrice + (i * 100)).toDouble(),
-            originalPrice: (basePrice + 200 + (i * 100)).toDouble(),
-            images: [_getMockImage(category, i + 1)],
-            category: category,
-            stock: 20 + i,
-            rating: 4.0 + (i % 5) / 5,
-            reviewCount: 15 + (i * 10),
-            isFlashSale: i % 4 == 0,
-            createdAt: DateTime.now().subtract(Duration(days: i)),
-          ),
-        );
-      }
-    }
-    return products;
-  }
+      // Beauty
+      'Matte Lipstick Red': 'https://images.unsplash.com/photo-1586776977607-310e9c725c37?w=500&fit=crop',
+      'Moisturizing Face Cream': 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&fit=crop',
+      'Organic Face Mask': 'https://images.unsplash.com/photo-1596462502278-27bfaf43e218?w=500&fit=crop',
+      'Perfume Eau De Toilette': 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=500&fit=crop',
+      'Makeup Brush Set': 'https://images.unsplash.com/photo-1522338255047-105573740a3c?w=500&fit=crop',
+      'Hair Serum Silk': 'https://images.unsplash.com/photo-1537367667648-52e4b444ba07?w=500&fit=crop',
+      'Sunscreen SPF 50': 'https://images.unsplash.com/photo-1556229167-da31d93933c0?w=500&fit=crop',
+      'Eye Liner Waterproof': 'https://images.unsplash.com/photo-1597223557154-721c1cecc4b0?w=500&fit=crop',
+      'Nail Polish Pastel': 'https://images.unsplash.com/photo-1604902396830-aca29e19b067?w=500&fit=crop',
+      'Bath Bomb Lavender': 'https://images.unsplash.com/photo-1547043736-b2247cb34b01?w=500&fit=crop',
 
-  static String _getMockImage(String category, int index) {
-    final Map<String, List<String>> categoryImages = {
+      // Books
+      'Mystery Thriller Novel': 'https://images.unsplash.com/photo-1544947950-fac0720738f7?w=500&fit=crop',
+      'Sci-Fi Adventure Book': 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=500&fit=crop',
+      'Modern Poetry Collection': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&fit=crop',
+      'Business Success Guide': 'https://images.unsplash.com/photo-1507842217343-583f20270319?w=500&fit=crop',
+      'Healthy Cooking Recipes': 'https://images.unsplash.com/photo-1543002588-d83cea6bea2b?w=500&fit=crop',
+      'Historical Biography': 'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=500&fit=crop',
+      'Kids Bedtime Stories': 'https://images.unsplash.com/photo-1497633762265-9d1792697a61?w=500&fit=crop',
+      'Self Help Masterclass': 'https://images.unsplash.com/photo-1544947950-fac0720738f7?w=500&fit=crop',
+      'World Atlas 2024': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&fit=crop',
+      'Classic Literature Set': 'https://images.unsplash.com/photo-1507842217343-583f20270319?w=500&fit=crop',
+
+      // Toys
+      'Building Blocks Set': 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=500&fit=crop',
+      'Remote Control Racing Car': 'https://images.unsplash.com/photo-1596461404482-4efe4bb17886?w=500&fit=crop',
+      'Stuffed Teddy Bear': 'https://images.unsplash.com/photo-1558060302-3c4ef497fb05?w=500&fit=crop',
+      '1000 Piece Puzzle': 'https://images.unsplash.com/photo-1566576721346-d4a3b4ea30df?w=500&fit=crop',
+      'Wooden Doll House': 'https://images.unsplash.com/photo-1566119114618-c71b4916b46e?w=500&fit=crop',
+      'Action Figure Hero': 'https://images.unsplash.com/photo-1535572290543-8e0c4039865e?w=500&fit=crop',
+      'Strategy Board Game': 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500&fit=crop',
+      'DIY Slime Kit': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&fit=crop',
+      'Toy Musical Keyboard': 'https://images.unsplash.com/photo-1596461404482-4efe4bb17886?w=500&fit=crop',
+      'Art and Craft Set': 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=500&fit=crop',
+
+      // Vehicles
+      'Mountain Bike Pro': 'https://images.unsplash.com/photo-1532298229144-0ee0c9e9ad58?w=500&fit=crop',
+      'Electric Scooter X': 'https://images.unsplash.com/photo-1558981403-c5f91cbba527?w=500&fit=crop',
+      'Kids Tricycle Red': 'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=500&fit=crop',
+      'Folding Bicycle Blue': 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=500&fit=crop',
+      'Adult Commuter Scooter': 'https://images.unsplash.com/photo-1605348086202-0e9805988b16?w=500&fit=crop',
+      'BMX Freestyle Bike': 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=500&fit=crop',
+      'City Hybrid Bicycle': 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=500&fit=crop',
+      'Maple Wood Skateboard': 'https://images.unsplash.com/photo-1547447134-cd3f5c716030?w=500&fit=crop',
+      'Motorcycle Helmet': 'https://images.unsplash.com/photo-1558981403-c5f91cbba527?w=500&fit=crop',
+      'Adjustable Elbow Pads': 'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?w=500&fit=crop',
+
+      // Food
+      'Pure Organic Honey': 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=500&fit=crop',
+      'Premium Basmati Rice': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500&fit=crop',
+      'Refreshing Green Tea': 'https://images.unsplash.com/photo-1564890369478-c89fe6d9c339?w=500&fit=crop',
+      'Roasted Salted Cashews': 'https://images.unsplash.com/photo-1536628522851-1b7463ce97c1?w=500&fit=crop',
+      'Extra Virgin Olive Oil': 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500&fit=crop',
+      'Dark Artisan Chocolate': 'https://images.unsplash.com/photo-1515037893149-de7f840978e2?w=500&fit=crop',
+      'Fresh Roasted Coffee': 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&fit=crop',
+      'Healthy Fruit Granola': 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=500&fit=crop',
+      'Natural Almond Butter': 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=500&fit=crop',
+      'Fresh Seasonal Fruit': 'https://images.unsplash.com/photo-1523348830708-15d4a09cfac2?w=500&fit=crop',
+      
+      // Others
+      'Gift Wrapping Box': 'https://images.unsplash.com/photo-1549465220-1d8c9ded9d4e?w=500&fit=crop',
+      'Storage Organizer Bin': 'https://images.unsplash.com/photo-1591192850383-7d7a39e9b1d7?w=500&fit=crop',
+      'Multi-purpose Desk Pad': 'https://images.unsplash.com/photo-1518455027359-f3f81390e188?w=500&fit=crop',
+      'Adjustable Laptop Stand': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&fit=crop',
+      'Travel Neck Pillow': 'https://images.unsplash.com/photo-1520116468816-95b69f847357?w=500&fit=crop',
+      'Universal Cable Clips': 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500&fit=crop',
+      'Portable Mini Fan': 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=500&fit=crop',
+      'Key Finder Bluetooth': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&fit=crop',
+      'Reusable Grocery Bag': 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500&fit=crop',
+      'Digital Luggage Scale': 'https://images.unsplash.com/photo-1591192850383-7d7a39e9b1d7?w=500&fit=crop',
+    };
+
+    final categoryData = {
       'Electronics': [
-        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&q=80&w=400',
+        'iPhone 15 Pro', 'MacBook Air M2', 'Sony Wireless Headphones', 'Samsung Galaxy S23', 
+        'Smart Watch Series 8', 'Gaming Mouse RGB', 'Mechanical Keyboard', '4K LED Monitor', 
+        'Power Bank 20000mAh', 'HD Web Camera'
       ],
       'Fashion': [
-        'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1595777707802-51ca6f37b7d5?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=400',
+        'Summer Floral Dress', 'Men Casual T-Shirt', 'Slim Fit Denim Jeans', 'Leather Wallet Black', 
+        'Canvas Sneakers White', 'Winter Woolen Scarf', 'Designer Sunglasses', 'Classic Wrist Watch', 
+        'Leather Handbag', 'Formal Office Shoes'
       ],
       'Home & Living': [
-        'https://images.unsplash.com/photo-1491554895235-0ac8ac844b3b?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1503387762519-52582b8b29b7?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1578500494198-246f612d03b3?auto=format&fit=crop&q=80&w=400',
+        'Scented Soy Candle', 'Modern Table Lamp', 'Memory Foam Pillow', 'Cotton Bed Sheet Set', 
+        'Silent Wall Clock', 'Ceramic Indoor Plant Pot', 'Non-stick Frying Pan', 'Floral Shower Curtain', 
+        'Velvet Throw Blanket', 'Kitchen Knife Set'
       ],
       'Sports': [
-        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1535743686920-55e06d675b0a?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1552346154-ff0a9b0d596d?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1449505278894-297fdb3edbc1?auto=format&fit=crop&q=80&w=400',
+        'Yoga Mat Anti-slip', 'Dumbbells Set 5kg', 'Basketball Official Size', 'Football Premium', 
+        'Badminton Racket Pro', 'Sports Gym Bag', 'Water Bottle Stainless Steel', 'Skipping Rope Speed', 
+        'Resistance Bands Set', 'Tennis Ball Pack'
       ],
       'Beauty': [
-        'https://images.unsplash.com/photo-1596462502278-27bfaf43e218?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1512207736139-c814b5c51c28?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1597318972826-6a3dc29c0eaa?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=400',
+        'Matte Lipstick Red', 'Moisturizing Face Cream', 'Organic Face Mask', 'Perfume Eau De Toilette', 
+        'Makeup Brush Set', 'Hair Serum Silk', 'Sunscreen SPF 50', 'Waterproof Eye Liner', 
+        'Nail Polish Pastel', 'Aromatic Bath Bomb'
       ],
       'Books': [
-        'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1507842217343-583f20270319?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1543002588-d83cea6bea2b?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=400',
+        'Mystery Thriller Novel', 'Sci-Fi Adventure Book', 'Modern Poetry Collection', 'Business Success Guide', 
+        'Healthy Cooking Recipes', 'Historical Biography', 'Kids Bedtime Stories', 'Self Help Masterclass', 
+        'World Atlas 2024', 'Classic Literature Set'
       ],
       'Toys': [
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1596461404482-4efe4bb17886?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1595777707802-51ca6f37b7d5?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1566119114618-c71b4916b46e?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1566576721346-d4a3b4ea30df?auto=format&fit=crop&q=80&w=400',
+        'Building Blocks Set', 'Remote Control Racing Car', 'Stuffed Teddy Bear', '1000 Piece Puzzle', 
+        'Wooden Doll House', 'Action Figure Hero', 'Strategy Board Game', 'DIY Slime Kit', 
+        'Toy Musical Keyboard', 'Art and Craft Set'
       ],
       'Vehicles': [
-        'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1558981403-c5f91cbba527?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1493238541991-81827fa6a0fa?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1517457373614-b7152f800fd1?auto=format&fit=crop&q=80&w=400',
+        'Mountain Bike Pro', 'Electric Scooter X', 'Kids Tricycle Red', 'Folding Bicycle Blue', 
+        'Adult Commuter Scooter', 'BMX Freestyle Bike', 'City Hybrid Bicycle', 'Maple Wood Skateboard', 
+        'Motorcycle Helmet', 'Adjustable Elbow Pads'
       ],
       'Food': [
-        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1567622646695-4655f4633775?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1476224203421-9ac3993c4c9b?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400',
+        'Pure Organic Honey', 'Premium Basmati Rice', 'Refreshing Green Tea', 'Roasted Salted Cashews', 
+        'Extra Virgin Olive Oil', 'Dark Artisan Chocolate', 'Fresh Roasted Coffee', 'Healthy Fruit Granola', 
+        'Natural Almond Butter', 'Fresh Seasonal Fruit'
+      ],
+      'Others': [
+        'Gift Wrapping Box', 'Storage Organizer Bin', 'Multi-purpose Desk Pad', 'Adjustable Laptop Stand', 
+        'Travel Neck Pillow', 'Universal Cable Clips', 'Portable Mini Fan', 'Key Finder Bluetooth', 
+        'Reusable Grocery Bag', 'Digital Luggage Scale'
       ],
     };
 
-    final List<String> urls = categoryImages[category] ?? [
-      'https://images.unsplash.com/photo-1560393464-5c69a73c5770?auto=format&fit=crop&q=80&w=400'
-    ];
-    return urls[index % urls.length];
+    categoryData.forEach((category, items) {
+      for (int i = 0; i < items.length; i++) {
+        final name = items[i];
+        final uniqueId = 'prod_${category.toLowerCase().replaceAll(' ', '_')}_$i';
+        
+        final imageUrl = itemImages[name.trim()] ?? 'https://picsum.photos/seed/$uniqueId/500/500';
+        
+        if (kDebugMode) {
+          if (!itemImages.containsKey(name.trim())) {
+            print("WARNING: No exact image map found for '$name'. Using fallback.");
+          } else {
+            print("Mapped: $name -> $imageUrl");
+          }
+        }
+
+        products.add(ProductModel(
+          id: uniqueId,
+          sellerId: 's1',
+          sellerName: 'BazaarHub Official',
+          title: name,
+          description: 'High-quality $name designed for durability and performance. A top-rated product in the $category category.',
+          price: (450 + (i * 200)).toDouble(),
+          originalPrice: (750 + (i * 200)).toDouble(),
+          images: [imageUrl],
+          category: category,
+          stock: 30 + (i * 2),
+          rating: i < 3 ? 4.9 : (i < 6 ? 4.8 : 4.5), 
+          isFlashSale: i < 3,
+          createdAt: DateTime.now().subtract(Duration(days: i)),
+        ));
+      }
+    });
+    return products;
   }
 }
