@@ -107,7 +107,14 @@ class AppRoutes {
       case categories:
         return _buildRoute(const CategoriesScreen(), settings_);
       case search:
-        return _buildRoute(const SearchScreen(), settings_);
+        final args = settings_.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          SearchScreen(
+            initialQuery: args?['query'],
+            triggerCamera: args?['triggerCamera'] ?? false,
+          ),
+          settings_,
+        );
       case notifications:
         return _buildRoute(const NotificationsScreen(), settings_);
       case becomeSeller:

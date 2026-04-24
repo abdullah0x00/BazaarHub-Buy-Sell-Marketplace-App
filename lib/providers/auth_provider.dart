@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
@@ -27,6 +28,46 @@ class AuthProvider extends ChangeNotifier {
   bool get notificationsEnabled => _notificationsEnabled;
   String get selectedLanguage => _selectedLanguage;
   String? get error => _error;
+
+  /// Update profile picture
+  Future<bool> updateProfilePicture(File image) async {
+    if (_currentUser == null) return false;
+    _setLoading(true);
+    try {
+      final imageUrl = await _authService.uploadProfilePicture(_currentUser!.id, image);
+      if (imageUrl != null) {
+        final updatedUser = _currentUser!.copyWith(avatar: imageUrl);
+        await updateProfile(updatedUser);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Sign in with Google
+  Future<bool> signInWithGoogle() async {
+    _setLoading(true);
+    _error = null;
+    try {
+      final user = await _authService.signInWithGoogle();
+      if (user != null) {
+        _currentUser = user;
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
 
   /// Initialize app state (called on splash screen)
   Future<void> init() async {

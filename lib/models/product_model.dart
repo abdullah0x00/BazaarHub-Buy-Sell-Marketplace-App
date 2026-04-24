@@ -94,6 +94,50 @@ class ProductModel {
     );
   }
 
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'sellerId': sellerId,
+      'sellerName': sellerName,
+      'title': title,
+      'description': description,
+      'price': price,
+      'originalPrice': originalPrice,
+      'images': images,
+      'category': category,
+      'stock': stock,
+      'rating': rating,
+      'reviewCount': reviewCount,
+      'isActive': isActive,
+      'isFlashSale': isFlashSale,
+      'createdAt': createdAt.toIso8601String(),
+      'specifications': specifications,
+    };
+  }
+
+  /// Create from JSON
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    return ProductModel(
+      id: json['id'] ?? '',
+      sellerId: json['sellerId'] ?? '',
+      sellerName: json['sellerName'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      price: (json['price'] as num).toDouble(),
+      originalPrice: json['originalPrice'] != null ? (json['originalPrice'] as num).toDouble() : null,
+      images: List<String>.from(json['images'] ?? []),
+      category: json['category'] ?? 'Others',
+      stock: json['stock'] ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      reviewCount: json['reviewCount'] ?? 0,
+      isActive: json['isActive'] ?? true,
+      isFlashSale: json['isFlashSale'] ?? false,
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      specifications: json['specifications'] != null ? Map<String, String>.from(json['specifications']) : null,
+    );
+  }
+
   static List<ProductModel> mockProducts() {
     List<ProductModel> products = [];
     

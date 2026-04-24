@@ -46,14 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _timer?.cancel();
     super.dispose();
   }
-
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(duration.inHours);
-    final minutes = twoDigits(duration.inMinutes.remainder(60));
-    final seconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$hours:$minutes:$twoDigits(duration.inSeconds.remainder(60))";
-  }
   
   // Custom manual format to fix the string interpolation issue in logic
   String _getTimerText() {
@@ -83,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
             slivers: [
               SliverToBoxAdapter(child: _buildAppBar(context, auth)),
               SliverToBoxAdapter(child: _buildSearchBar(context)),
-              SliverToBoxAdapter(child: _buildBannerSlider()),
+              SliverToBoxAdapter(child: _buildBannerSlider(context)),
               SliverToBoxAdapter(child: _buildCategories(context)),
 
               if (products.isLoading)
@@ -239,47 +231,50 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        height: 50,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.search, color: Colors.grey, size: 22),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text('Search for anything...', style: TextStyle(color: Colors.grey, fontSize: 14)),
-            ),
-            VerticalDivider(indent: 12, endIndent: 12, color: Colors.grey[300]),
-            IconButton(
+      child: GestureDetector(
+        onTap: () => Navigator.pushNamed(context, AppRoutes.search),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.search, color: Colors.grey, size: 22),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text('Search for anything...', style: TextStyle(color: Colors.grey, fontSize: 14)),
+              ),
+              VerticalDivider(indent: 12, endIndent: 12, color: Colors.grey[300]),
+              IconButton(
               icon: const Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: 20),
-              onPressed: () {},
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.search, arguments: {'triggerCamera': true}),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBannerSlider() {
+  Widget _buildBannerSlider(BuildContext context) {
     return Container(
       height: 160,
       margin: const EdgeInsets.only(top: 8),
       child: PageView(
         children: [
-          _buildBannerItem('Summer Collection', 'Up to 50% Off', AppColors.primary, AppColors.azure),
-          _buildBannerItem('Tech Deals', 'Free Shipping', AppColors.azure, AppColors.primaryDark),
-          _buildBannerItem('Home Style', 'Starting PKR 999', AppColors.primaryDark, AppColors.accentDark),
+          _buildBannerItem(context, 'Summer Collection', 'Up to 50% Off', AppColors.primary, AppColors.azure),
+          _buildBannerItem(context, 'Tech Deals', 'Free Shipping', AppColors.azure, AppColors.primaryDark),
+          _buildBannerItem(context, 'Home Style', 'Starting PKR 999', AppColors.primaryDark, AppColors.accentDark),
         ],
       ),
     );
   }
 
-  Widget _buildBannerItem(String title, String sub, Color c1, Color c2) {
+  Widget _buildBannerItem(BuildContext context, String title, String sub, Color c1, Color c2) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -299,7 +294,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(sub, style: const TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    final query = title.contains('Tech') ? 'Electronics' : (title.contains('Home') ? 'Home & Living' : 'Fashion');
+                    Navigator.pushNamed(context, AppRoutes.search, arguments: {'query': query});
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primary,
@@ -335,21 +333,26 @@ class _HomeScreenState extends State<HomeScreen> {
             separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (ctx, i) {
               final cat = AppConstants.categories[i];
-              return Column(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, AppRoutes.search, arguments: {'query': cat['name']});
+                },
+                child: Column(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
+                      ),
+                      child: Center(child: Text(cat['icon']!, style: const TextStyle(fontSize: 28))),
                     ),
-                    child: Center(child: Text(cat['icon']!, style: const TextStyle(fontSize: 28))),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(cat['name']!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
-                ],
+                    const SizedBox(height: 8),
+                    Text(cat['name']!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+                  ],
+                ),
               );
             },
           ),

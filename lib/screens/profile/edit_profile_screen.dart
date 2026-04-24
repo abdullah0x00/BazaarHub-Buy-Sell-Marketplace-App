@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
@@ -17,6 +20,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _phoneCtrl;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -31,6 +35,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a Photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
+      if (image != null) {
+        if (!mounted) return;
+        final auth = context.read<AuthProvider>();
+        final success = await auth.updateProfilePicture(File(image.path));
+        if (!mounted) return;
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppColors.success),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(auth.error ?? 'Upload failed'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -58,6 +107,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final user = auth.currentUser;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Edit Profile')),
@@ -69,40 +120,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               // Avatar
               Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: AppColors.azureSurface,
-                      child: Text(
-                        _nameCtrl.text.isNotEmpty
-                            ? _nameCtrl.text[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 36,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
+                child: GestureDetector(
+                  onTap: auth.isLoading ? null : _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 3),
                         ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          size: 16,
-                          color: Colors.white,
+                        child: ClipOval(
+                          child: user?.avatar != null && user!.avatar!.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: user.avatar!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                  errorWidget: (context, url, error) => _buildPlaceholder(),
+                                )
+                              : _buildPlaceholder(),
                         ),
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: auth.isLoading 
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 28),
@@ -167,6 +222,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onPressed: _save,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      color: AppColors.azureSurface,
+      child: Center(
+        child: Text(
+          _nameCtrl.text.isNotEmpty ? _nameCtrl.text[0].toUpperCase() : 'U',
+          style: const TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primary,
           ),
         ),
       ),

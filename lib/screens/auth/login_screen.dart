@@ -5,6 +5,7 @@ import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
+import '../../utils/validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,16 +27,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Skip validation and just login as admin for demo purposes
+    // Enable real validation
+    if (!_formKey.currentState!.validate()) return;
+
     final auth = context.read<AuthProvider>();
 
-    // Auto-fill admin credentials if empty and just login
-    final email = _emailCtrl.text.trim().isEmpty
-        ? 'admin@bazaarhub.com'
-        : _emailCtrl.text.trim();
-    final password = _passCtrl.text.isEmpty ? 'password' : _passCtrl.text;
-
-    final success = await auth.login(email, password);
+    final success = await auth.login(
+      _emailCtrl.text.trim(), 
+      _passCtrl.text
+    );
 
     if (!mounted) return;
     if (success) {
@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.error ?? 'Login failed'),
+          content: Text(auth.error ?? 'Login failed. Please check your credentials.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -64,7 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-                // Header
                 Center(
                   child: Column(
                     children: [
@@ -100,47 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Demo hint
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.azureSurface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: AppColors.azure.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: AppColors.azure,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                            children: [
-                              TextSpan(text: 'Quick Login Enabled: '),
-                              TextSpan(
-                                text: 'Just click Login button',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Fields
+                
+                // Fields with validation
                 CustomTextField(
                   label: 'Email Address',
                   hint: 'Enter your email',
@@ -151,6 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppColors.textHint,
                     size: 20,
                   ),
+                  validator: (v) => AppValidators.email(v),
                 ),
                 const SizedBox(height: 16),
                 CustomTextField(
@@ -163,6 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppColors.textHint,
                     size: 20,
                   ),
+                  validator: (v) => v == null || v.isEmpty ? 'Please enter your password' : null,
                 ),
                 const SizedBox(height: 8),
                 Align(
@@ -188,39 +150,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: auth.isLoading,
                   onPressed: _login,
                 ),
-                const SizedBox(height: 24),
-                // Divider
-                const Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textHint,
-                        ),
+                const SizedBox(height: 20),
+                // Google Sign In
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: auth.isLoading ? null : () async {
+                      final success = await auth.signInWithGoogle();
+                      if (success && mounted) {
+                        Navigator.pushReplacementNamed(context, AppRoutes.main);
+                      } else if (auth.error != null && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(auth.error!), backgroundColor: AppColors.error),
+                        );
+                      }
+                    },
+                    icon: Image.network(
+                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"G\"_Logo.svg/1200px-Google_\"G\"_Logo.svg.png',
+                      height: 24,
+                    ),
+                    label: const Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    Expanded(child: Divider()),
-                  ],
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.divider),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
-                // Social buttons (UI only)
-                _SocialButton(
-                  label: 'Continue with Google',
-                  emoji: '🌐',
-                  onTap: () {},
-                ),
-                const SizedBox(height: 12),
-                _SocialButton(
-                  label: 'Continue with Facebook',
-                  emoji: '📘',
-                  onTap: () {},
-                ),
-                const SizedBox(height: 32),
-                // Register link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -247,52 +211,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 40),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  final String label;
-  final String emoji;
-  final VoidCallback onTap;
-
-  const _SocialButton({
-    required this.label,
-    required this.emoji,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 52,
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.divider),
-          borderRadius: BorderRadius.circular(14),
-          color: AppColors.white,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
         ),
       ),
     );

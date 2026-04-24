@@ -4,7 +4,6 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
-import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -20,7 +19,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  bool _agreeTerms = false;
 
   @override
   void dispose() {
@@ -33,30 +31,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!_agreeTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to terms & conditions'),
-          backgroundColor: AppColors.warning,
-        ),
-      );
-      return;
-    }
+
     final auth = context.read<AuthProvider>();
-    final success = await auth.register(
-      _nameCtrl.text.trim(),
-      _emailCtrl.text.trim(),
-      _passCtrl.text,
-    );
-    if (!mounted) return;
-    if (success) {
-      Navigator.pushReplacementNamed(context, AppRoutes.main);
-    } else {
+    
+    try {
+      final success = await auth.register(
+        _nameCtrl.text.trim(),
+        _emailCtrl.text.trim(),
+        _passCtrl.text,
+      );
+      
+      if (!mounted) return;
+      
+      if (success) {
+        Navigator.pushReplacementNamed(context, AppRoutes.main);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(auth.error ?? 'Registration failed'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(auth.error ?? 'Registration failed'),
-          backgroundColor: AppColors.error,
-        ),
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppColors.error),
       );
     }
   }
@@ -70,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -84,175 +83,117 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Text(
                   'Create Account',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 6),
                 const Text(
                   'Join BazaarHub and start buying or selling today',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 32),
+                
+                // Name Field
                 CustomTextField(
                   label: 'Full Name',
-                  hint: 'e.g. Ahmed Khan',
+                  hint: 'e.g. Abdullah Asif',
                   controller: _nameCtrl,
-                  validator: (v) =>
-                      AppValidators.minLength(v, 3, fieldName: 'Full name'),
-                  prefixIcon: const Icon(
-                    Icons.person_outline,
-                    color: AppColors.textHint,
-                    size: 20,
-                  ),
+                  prefixIcon: const Icon(Icons.person_outline),
+                  validator: (v) => v == null || v.isEmpty ? 'Please enter your name' : null,
                 ),
                 const SizedBox(height: 16),
+                
+                // Email Field
                 CustomTextField(
                   label: 'Email Address',
                   hint: 'Enter your email',
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  validator: AppValidators.email,
-                  prefixIcon: const Icon(
-                    Icons.email_outlined,
-                    color: AppColors.textHint,
-                    size: 20,
-                  ),
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  validator: (v) => AppValidators.email(v),
                 ),
                 const SizedBox(height: 16),
+                
+                // Password Field
                 CustomTextField(
                   label: 'Password',
-                  hint: 'Min 8 chars, 1 uppercase, 1 digit',
+                  hint: 'At least 6 characters',
                   controller: _passCtrl,
                   obscureText: true,
-                  validator: AppValidators.password,
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                    color: AppColors.textHint,
-                    size: 20,
-                  ),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  validator: (v) => v != null && v.length < 6 ? 'Password must be at least 6 characters' : null,
                 ),
                 const SizedBox(height: 16),
+                
+                // Confirm Password Field
                 CustomTextField(
                   label: 'Confirm Password',
                   hint: 'Re-enter your password',
                   controller: _confirmCtrl,
                   obscureText: true,
-                  validator: (v) =>
-                      AppValidators.confirmPassword(v, _passCtrl.text),
-                  prefixIcon: const Icon(
-                    Icons.lock_outline,
-                    color: AppColors.textHint,
-                    size: 20,
-                  ),
-                  textInputAction: TextInputAction.done,
+                  prefixIcon: const Icon(Icons.lock_clock_outlined),
+                  validator: (v) => v != _passCtrl.text ? 'Passwords do not match' : null,
                 ),
-                const SizedBox(height: 20),
-                // Terms & Conditions
-                GestureDetector(
-                  onTap: () =>
-                      setState(() => _agreeTerms = !_agreeTerms),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: _agreeTerms
-                              ? AppColors.primary
-                              : AppColors.white,
-                          border: Border.all(
-                            color: _agreeTerms
-                                ? AppColors.primary
-                                : AppColors.divider,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: _agreeTerms
-                            ? const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 14,
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                            children: [
-                              TextSpan(text: 'I agree to the '),
-                              TextSpan(
-                                text: 'Terms of Service',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              TextSpan(text: ' and '),
-                              TextSpan(
-                                text: 'Privacy Policy',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: auth.isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
-                const SizedBox(height: 28),
-                CustomButton(
-                  text: 'Create Account',
-                  isLoading: auth.isLoading,
-                  onPressed: _register,
+                const SizedBox(height: 16),
+                // Google Sign In
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: auth.isLoading ? null : () async {
+                      final success = await auth.signInWithGoogle();
+                      if (success && mounted) {
+                        Navigator.pushReplacementNamed(context, AppRoutes.main);
+                      } else if (auth.error != null && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(auth.error!), backgroundColor: AppColors.error),
+                        );
+                      }
+                    },
+                    icon: Image.network(
+                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"G\"_Logo.svg/1200px-Google_\"G\"_Logo.svg.png',
+                      height: 24,
+                    ),
+                    label: const Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.divider),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Already have an account? ',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                    const Text("Already have an account? ", style: TextStyle(color: AppColors.textSecondary)),
                     GestureDetector(
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.login,
-                      ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+                      child: const Text('Login', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
               ],
             ),
           ),

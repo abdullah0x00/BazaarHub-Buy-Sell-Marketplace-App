@@ -9,7 +9,9 @@ import '../../widgets/empty_state_widget.dart';
 import 'search_scanner_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String? initialQuery;
+  final bool triggerCamera;
+  const SearchScreen({super.key, this.initialQuery, this.triggerCamera = false});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -18,7 +20,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
   bool _showFilters = false;
-  String? _sortBy = 'Popularity';
+  final String _sortBy = 'Popularity';
 
   final List<String> _recent = [
     'Smartphone',
@@ -37,8 +39,17 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialQuery != null) {
+      _ctrl.text = widget.initialQuery!;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().loadHomeData();
+      if (widget.initialQuery != null) {
+        _onSearch(widget.initialQuery!);
+      }
+      if (widget.triggerCamera) {
+        Future.delayed(const Duration(milliseconds: 300), () => _openImageSearch());
+      }
     });
   }
 
@@ -55,7 +66,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _openScanner() async {
-    final provider = context.read<ProductProvider>();
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SearchScannerScreen()),
@@ -107,20 +117,30 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           child: TextField(
             controller: _ctrl,
-            autofocus: true,
+            autofocus: !widget.triggerCamera,
             decoration: InputDecoration(
               hintText: 'Search products...',
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
               prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                    if (_ctrl.text.isNotEmpty) 
-                      IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () { _ctrl.clear(); setState(() {}); }),
-                   IconButton(icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20), onPressed: _openImageSearch),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 18), 
+                        onPressed: () { _ctrl.clear(); setState(() {}); }
+                      ),
+                   IconButton(
+                     icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20), 
+                     onPressed: _openImageSearch
+                   ),
+                   const SizedBox(width: 4),
                 ],
               ),
-              contentPadding: const EdgeInsets.only(top: 10),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
             onChanged: (v) => setState(() {}),
             onSubmitted: _onSearch,
@@ -147,9 +167,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildFiltersRow() {
     return Container(
-      color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey[200]!))),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -157,7 +179,7 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               const Icon(Icons.sort, size: 18, color: Colors.grey),
               const SizedBox(width: 4),
-              Text(_sortBy ?? 'Popularity', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              Text(_sortBy, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
             ],
           ),
           InkWell(
@@ -227,7 +249,11 @@ class _SearchScreenState extends State<SearchScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey[300]!)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey[300]!)
+        ),
         child: Text(text, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ),
     );

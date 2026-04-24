@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
@@ -43,17 +44,22 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 children: [
                   // Avatar
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      displayName.isNotEmpty
-                          ? displayName[0].toUpperCase()
-                          : 'U',
-                      style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary),
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 4),
+                    ),
+                    child: ClipOval(
+                      child: user?.avatar != null && user!.avatar!.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: user.avatar!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                              errorWidget: (context, url, error) => _buildAvatarPlaceholder(displayName),
+                            )
+                          : _buildAvatarPlaceholder(displayName),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -72,6 +78,7 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+
 
             Padding(
               padding: const EdgeInsets.all(20),
@@ -256,6 +263,22 @@ class ProfileScreen extends StatelessWidget {
             ],
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder(String name) {
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'U',
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
       ),
     );
   }
