@@ -15,6 +15,8 @@ class UserModel {
   final String? shopName;
   final String? cnic;
   final String? bankAccount;
+  final String? warehouseAddress;
+  final List<String> completedOnboardingSteps;
   final DateTime createdAt;
 
   const UserModel({
@@ -29,11 +31,20 @@ class UserModel {
     this.shopName,
     this.cnic,
     this.bankAccount,
+    this.warehouseAddress,
+    this.completedOnboardingSteps = const [],
     required this.createdAt,
   });
 
-  /// Check if user is a seller
-  bool get isSeller => role == UserRole.seller && isApprovedSeller;
+  /// Check if user has completed all seller registration steps
+  bool get hasCompletedSellerRegistration => 
+    (shopName?.isNotEmpty ?? false) && 
+    (cnic?.isNotEmpty ?? false) && 
+    (bankAccount?.isNotEmpty ?? false) && 
+    (warehouseAddress?.isNotEmpty ?? false);
+
+  /// Check if user is a seller (Role + Approval + Registration)
+  bool get isSeller => role == UserRole.seller && isApprovedSeller && hasCompletedSellerRegistration;
 
   /// Check if user is an admin
   bool get isAdmin => role == UserRole.admin;
@@ -51,6 +62,8 @@ class UserModel {
     String? shopName,
     String? cnic,
     String? bankAccount,
+    String? warehouseAddress,
+    List<String>? completedOnboardingSteps,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -65,6 +78,8 @@ class UserModel {
       shopName: shopName ?? this.shopName,
       cnic: cnic ?? this.cnic,
       bankAccount: bankAccount ?? this.bankAccount,
+      warehouseAddress: warehouseAddress ?? this.warehouseAddress,
+      completedOnboardingSteps: completedOnboardingSteps ?? this.completedOnboardingSteps,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -83,6 +98,8 @@ class UserModel {
       'shopName': shopName,
       'cnic': cnic,
       'bankAccount': bankAccount,
+      'warehouseAddress': warehouseAddress,
+      'completedOnboardingSteps': completedOnboardingSteps,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -104,6 +121,8 @@ class UserModel {
       shopName: json['shopName'],
       cnic: json['cnic'],
       bankAccount: json['bankAccount'],
+      warehouseAddress: json['warehouseAddress'],
+      completedOnboardingSteps: List<String>.from(json['completedOnboardingSteps'] ?? []),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),

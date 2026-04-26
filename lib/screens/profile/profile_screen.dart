@@ -155,36 +155,39 @@ class ProfileScreen extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // Seller Section (Always accessible if not already a seller)
+                  // Seller Section
                   _buildSectionTitle('Seller Center'),
                   _buildMenuCard([
-                    if (user?.isSeller == true) ...[
-                      _MenuItem(
-                          Icons.dashboard_outlined,
-                          'Seller Dashboard',
-                          () => Navigator.pushNamed(
-                              context, AppRoutes.sellerDashboard)),
+                    _MenuItem(
+                        Icons.dashboard_outlined,
+                        'Seller Dashboard',
+                        () {
+                          final user = context.read<AuthProvider>().currentUser;
+                          if (user == null) return;
+
+                          if (user.isSeller == true) {
+                            Navigator.pushNamed(context, AppRoutes.sellerDashboard);
+                          } else {
+                            Navigator.pushNamed(context, AppRoutes.becomeSeller);
+                          }
+                        }),
+                    
+                    if (user?.isSeller == true)
                       _MenuItem(
                           Icons.bar_chart,
                           'Sales Analytics',
                           () => Navigator.pushNamed(
                               context, AppRoutes.sellerAnalytics)),
-                    ] else
-                      _MenuItem(
-                          Icons.storefront_outlined,
-                          'Become a Seller',
-                          () => Navigator.pushNamed(
-                              context, AppRoutes.becomeSeller)),
                   ]),
 
-                  // Admin Section (Restored for Admin users)
-                  if (user?.isAdmin == true) ...[
+                  // Admin Section
+                  if (user?.isAdmin == true || user?.email == 'admin@bazaarhub.com') ...[
                     const SizedBox(height: 20),
-                    _buildSectionTitle('Admin Panel'),
+                    _buildSectionTitle('Platform Administration'),
                     _buildMenuCard([
                       _MenuItem(
-                          Icons.admin_panel_settings_outlined,
-                          'Admin Dashboard',
+                          Icons.admin_panel_settings_rounded,
+                          'Admin Control Center',
                           () => Navigator.pushNamed(
                               context, AppRoutes.adminDashboard)),
                     ]),

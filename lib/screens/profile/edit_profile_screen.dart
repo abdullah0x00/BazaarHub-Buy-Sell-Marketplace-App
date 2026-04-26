@@ -21,6 +21,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _phoneCtrl;
   final ImagePicker _picker = ImagePicker();
+  File? _pickedImage;
 
   @override
   void initState() {
@@ -65,19 +66,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         imageQuality: 70,
       );
       if (image != null) {
-        if (!mounted) return;
-        final auth = context.read<AuthProvider>();
-        final success = await auth.updateProfilePicture(File(image.path));
-        if (!mounted) return;
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppColors.success),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(auth.error ?? 'Upload failed'), backgroundColor: AppColors.error),
-          );
-        }
+        setState(() {
+          _pickedImage = File(image.path);
+        });
       }
     }
   }
@@ -87,10 +78,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final auth = context.read<AuthProvider>();
     final user = auth.currentUser;
     if (user == null) return;
-    final updated = user.copyWith(
+
+    // Upload image first if a new one was picked
+    if (_pickedImage != null) {
+      final success = await auth.updateProfilePicture(_pickedImage!);
+      if (!mounted) return;
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(auth.error ?? 'Failed to upload image'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return; // Stop saving if image upload fails
+      }
+    }
+
+    // Get updated user (might have new avatar URL)
+    final updatedUser = auth.currentUser!;
+    final updated = updatedUser.copyWith(
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
     );
+    
     final success = await auth.updateProfile(updated);
     if (!mounted) return;
     if (success) {
@@ -132,14 +142,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 3),
                         ),
                         child: ClipOval(
-                          child: user?.avatar != null && user!.avatar!.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: user.avatar!,
+                          child: _pickedImage != null
+                              ? Image.file(
+                                  _pickedImage!,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) => _buildPlaceholder(),
+                                  width: 110,
+                                  height: 110,
                                 )
-                              : _buildPlaceholder(),
+                              : user?.avatar != null && user!.avatar!.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: user.avatar!,
+                                      fit: BoxFit.cover,
+                                      width: 110,
+                                      height: 110,
+                                      placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) => _buildPlaceholder(),
+                                    )
+                                  : _buildPlaceholder(),
                         ),
                       ),
                       Positioned(

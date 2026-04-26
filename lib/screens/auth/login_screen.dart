@@ -38,8 +38,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (!mounted) return;
+
     if (success) {
-      Navigator.pushReplacementNamed(context, AppRoutes.main);
+      if (auth.isAdmin) {
+        Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.main);
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -155,32 +160,48 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 52,
-                  child: OutlinedButton.icon(
+                  child: OutlinedButton(
                     onPressed: auth.isLoading ? null : () async {
                       final success = await auth.signInWithGoogle();
-                      if (success && mounted) {
-                        Navigator.pushReplacementNamed(context, AppRoutes.main);
-                      } else if (auth.error != null && mounted) {
+                      if (!context.mounted) return;
+                      if (success) {
+                        if (auth.isAdmin) {
+                          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+                        } else {
+                          Navigator.pushReplacementNamed(context, AppRoutes.main);
+                        }
+                      } else if (auth.error != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(auth.error!), backgroundColor: AppColors.error),
                         );
                       }
                     },
-                    icon: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_\"G\"_Logo.svg/1200px-Google_\"G\"_Logo.svg.png',
-                      height: 24,
-                    ),
-                    label: const Text(
-                      'Continue with Google',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.divider),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.network(
+                          'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
+                          height: 22,
+                          errorBuilder: (context, error, stackTrace) => const Text(
+                            'G',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Continue with Google',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

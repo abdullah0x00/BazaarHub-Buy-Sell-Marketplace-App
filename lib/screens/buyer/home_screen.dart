@@ -59,11 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final products = context.watch<ProductProvider>();
-    
-    final filteredProducts = products.products.where((p) {
-      return !products.flashSale.any((f) => f.id == p.id) &&
-          !products.recommended.any((r) => r.id == p.id);
-    }).toList();
+    final allProducts = products.products;
  
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -173,8 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSpacing: 14,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => ProductCard(product: filteredProducts[i]),
-                      childCount: filteredProducts.length,
+                      (ctx, i) => ProductCard(product: allProducts[i]),
+                      childCount: allProducts.length,
                     ),
                   ),
                 ),
@@ -320,9 +316,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.categories),
+                child: const Text('View All', style: TextStyle(color: AppColors.azure, fontSize: 13)),
+              ),
+            ],
+          ),
         ),
         SizedBox(
           height: 100,

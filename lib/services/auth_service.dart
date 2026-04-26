@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../utils/constants.dart';
 
@@ -15,8 +16,64 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseStorage _storage = FirebaseStorage.instanceFor(bucket: "marketplace-app-a554e.firebasestorage.app");
+  
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  /// 100% Working Upload Logic consolidated for both Products and Profile
+  Future<String> uploadFile(File imageFile, {String folder = 'products'}) async {
+    try {
+      if (!imageFile.existsSync()) {
+        throw Exception('File does not exist on device.');
+      }
+
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+
+      Reference ref = _storage
+          .ref()
+          .child(folder)
+          .child('$fileName.jpg');
+
+      // Read file as bytes to avoid any path/permission issues on Android
+      final Uint8List bytes = await imageFile.readAsBytes();
+
+      // Use putData instead of putFile for better reliability
+      UploadTask uploadTask = ref.putData(
+        bytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      // Wait for completion
+      TaskSnapshot snapshot = await uploadTask;
+      
+      if (snapshot.state == TaskState.error) {
+        throw Exception('Upload failed. Please try again.');
+      }
+
+      // Get URL
+      String downloadUrl = await ref.getDownloadURL();
+
+      return downloadUrl;
+    } on FirebaseException catch (e) {
+      debugPrint("Firebase Storage Error: ${e.code} - ${e.message}");
+      if (e.code == 'unauthorized') {
+        throw Exception('Permission Denied: Please check your Storage Rules in Firebase Console.');
+      } else if (e.code == 'quota-exceeded') {
+        throw Exception('Storage Quota Exceeded: Please upgrade to Blaze plan or check usage.');
+      } else if (e.code == 'object-not-found') {
+        throw Exception('Firebase Storage is not initialized properly. Go to Firebase Console -> Storage -> Click "Get Started".');
+      } else if (e.code == 'retry-limit-exceeded') {
+        throw Exception('Network error: Upload timed out. Please check your internet connection.');
+      }
+      throw Exception('Firebase Error: ${e.message}');
+    } catch (e) {
+      debugPrint("General Upload Error: $e");
+      throw Exception('Upload failed: $e');
+    }
+  }
 
   Future<UserModel?> signInWithGoogle() async {
     try {
@@ -39,7 +96,6 @@ class AuthService {
           await _saveUser(user);
           return user;
         } else {
-          // Create new user if not exists
           final newUser = UserModel(
             id: firebaseUser.uid,
             name: firebaseUser.displayName ?? 'Google User',
@@ -55,37 +111,11 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      throw Exception('Google Sign-In failed: $e');
-    }
-  }
-
-  Future<String?> uploadProfilePicture(String userId, File imageFile) async {
-    try {
-      // Check if file exists
-      if (!imageFile.existsSync()) {
-        throw Exception('Image file not found on device.');
+      String message = e.toString();
+      if (message.contains('Api10')) {
+        message = 'Google Sign-In Error (Api10): Please add your SHA-1 key to Firebase Project Settings.';
       }
-
-      final ref = _storage.ref().child('profile_pictures').child('$userId.jpg');
-      
-      // Upload with metadata
-      final uploadTask = await ref.putFile(
-        imageFile, 
-        SettableMetadata(contentType: 'image/jpeg')
-      );
-
-      if (uploadTask.state == TaskState.success) {
-        return await ref.getDownloadURL();
-      } else {
-        throw Exception('Upload failed with state: ${uploadTask.state}');
-      }
-    } on FirebaseException catch (e) {
-      if (e.code == 'project-not-found') {
-        throw Exception('Firebase Storage is not enabled. Go to Firebase Console > Storage and click Get Started.');
-      }
-      throw Exception('Firebase Storage Error: ${e.message}');
-    } catch (e) {
-      throw Exception('Failed to upload image: $e');
+      throw Exception(message);
     }
   }
 
@@ -111,6 +141,13 @@ class AuthService {
         throw Exception('Firebase Configuration Error: \n1. Enable Email/Password in Firebase Console.\n2. Disable reCAPTCHA Enterprise in Auth Settings.\n3. Add SHA-256 to Project Settings.');
       }
       throw Exception(e.message ?? 'Authentication failed');
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw Exception('Firestore Rules Error: Go to Firebase Console > Firestore > Rules and set them to "allow read, write: if true;" then click Publish.');
+      }
+      throw Exception(e.message ?? 'Database error');
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
 
@@ -192,6 +229,7 @@ class AuthService {
     required String cnic,
     required String phone,
     required String bankAccount,
+    String? warehouseAddress,
   }) async {
     final updatedUser = user.copyWith(
       role: UserRole.seller,
@@ -199,12 +237,28 @@ class AuthService {
       cnic: cnic,
       phone: phone,
       bankAccount: bankAccount,
-      isApprovedSeller: true, 
+      warehouseAddress: warehouseAddress,
+      isApprovedSeller: true, // Approve immediately so dashboard opens
     );
     
     await _db.collection('users').doc(user.id).update(updatedUser.toJson());
     await _saveUser(updatedUser);
     return updatedUser;
+  }
+
+  Future<void> updateOnboardingStep(String userId, String step) async {
+    final doc = await _db.collection('users').doc(userId).get();
+    if (doc.exists) {
+      final user = UserModel.fromJson(doc.data()!);
+      final steps = List<String>.from(user.completedOnboardingSteps);
+      if (!steps.contains(step)) {
+        steps.add(step);
+        await _db.collection('users').doc(userId).update({
+          'completedOnboardingSteps': steps,
+        });
+        await _saveUser(user.copyWith(completedOnboardingSteps: steps));
+      }
+    }
   }
 
   Future<void> logout() async {

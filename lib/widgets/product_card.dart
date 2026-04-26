@@ -21,9 +21,6 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Debug print for image URL
-    debugPrint("IMAGE URL for ${product.title}: ${product.coverImage}");
-    
     final productProvider = context.watch<ProductProvider>();
     final isWishlisted = productProvider.isWishlisted(product.id);
 
@@ -62,55 +59,31 @@ class ProductCard extends StatelessWidget {
                     child: AspectRatio(
                       aspectRatio: 1.1,
                       child: CachedNetworkImage(
-                        imageUrl: product.coverImage,
+                        imageUrl: product.images.isNotEmpty ? product.images[0] : '',
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           color: AppColors.azureSurface,
                           child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.azure,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: AppColors.azureSurface,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                product.title,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                        errorWidget: (context, url, error) {
-                          // Try a secondary image from the product.images list if available,
-                          // otherwise show a graceful placeholder icon.
-                          final fallback = (product.images.length > 1 && product.images[1].isNotEmpty)
-                              ? product.images[1]
-                              : 'https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400';
-                          if (fallback.isNotEmpty && fallback.startsWith('http')) {
-                            return CachedNetworkImage(
-                              imageUrl: fallback,
-                              fit: BoxFit.cover,
-                              placeholder: (c, u) => Container(
-                                color: AppColors.azureSurface,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.azure,
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (c, u, e) => Container(
-                                color: AppColors.azureSurface,
-                                child: const Icon(
-                                  Icons.image_outlined,
-                                  color: AppColors.azure,
-                                  size: 40,
-                                ),
-                              ),
-                            );
-                          }
-                          return Container(
-                            color: AppColors.azureSurface,
-                            child: const Icon(
-                              Icons.image_outlined,
-                              color: AppColors.azure,
-                              size: 40,
-                            ),
-                          );
-                        },
                       ),
                     ),
                   ),

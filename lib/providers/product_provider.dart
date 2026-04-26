@@ -7,6 +7,7 @@ class ProductProvider extends ChangeNotifier {
   final ProductService _service = ProductService();
 
   List<ProductModel> _products = [];
+  List<ProductModel> _sellerProducts = [];
   List<ProductModel> _flashSale = [];
   List<ProductModel> _recommended = [];
   List<ProductModel> _searchResults = [];
@@ -15,6 +16,7 @@ class ProductProvider extends ChangeNotifier {
   String? _error;
 
   List<ProductModel> get products => _products;
+  List<ProductModel> get sellerProducts => _sellerProducts;
   List<ProductModel> get flashSale => _flashSale;
   List<ProductModel> get recommended => _recommended;
   List<ProductModel> get searchResults => _searchResults;
@@ -22,6 +24,19 @@ class ProductProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isWishlistEmpty => _wishlist.isEmpty;
+
+  /// Load seller specific products
+  Future<void> loadSellerProducts(String sellerId) async {
+    _setLoading(true);
+    try {
+      _sellerProducts = await _service.getSellerProducts(sellerId);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
 
   /// Load home page data
   Future<void> loadHomeData() async {

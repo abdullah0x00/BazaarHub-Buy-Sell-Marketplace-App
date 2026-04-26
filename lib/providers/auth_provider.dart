@@ -34,10 +34,12 @@ class AuthProvider extends ChangeNotifier {
     if (_currentUser == null) return false;
     _setLoading(true);
     try {
-      final imageUrl = await _authService.uploadProfilePicture(_currentUser!.id, image);
-      if (imageUrl != null) {
+      final imageUrl = await _authService.uploadFile(image, folder: 'profile_pictures');
+      if (imageUrl.isNotEmpty) {
         final updatedUser = _currentUser!.copyWith(avatar: imageUrl);
-        await updateProfile(updatedUser);
+        // Direct call to service to avoid nested setLoading
+        _currentUser = await _authService.updateProfile(updatedUser);
+        notifyListeners();
         return true;
       }
       return false;
@@ -47,6 +49,12 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// Setter for currentUser to update from outside
+  set currentUser(UserModel? user) {
+    _currentUser = user;
+    notifyListeners();
   }
 
   /// Sign in with Google
@@ -139,6 +147,7 @@ class AuthProvider extends ChangeNotifier {
     required String cnic,
     required String phone,
     required String bankAccount,
+    String? warehouseAddress,
   }) async {
     if (_currentUser == null) return false;
     _setLoading(true);
@@ -149,6 +158,7 @@ class AuthProvider extends ChangeNotifier {
         cnic: cnic,
         phone: phone,
         bankAccount: bankAccount,
+        warehouseAddress: warehouseAddress,
       );
       _currentUser = updated;
       notifyListeners();
@@ -173,6 +183,19 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Complete onboarding step
+  Future<void> completeOnboardingStep(String step) async {
+    if (_currentUser == null) return;
+    try {
+      await _authService.updateOnboardingStep(_currentUser!.id, step);
+      // Reload user to get updated steps
+      _currentUser = await _authService.getSavedUser();
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
     }
   }
 

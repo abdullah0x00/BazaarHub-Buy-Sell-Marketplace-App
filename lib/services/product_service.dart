@@ -10,82 +10,107 @@ class ProductService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final List<ProductModel> _mockProducts = ProductModel.mockProducts();
 
+  /// Get all active products for buyers
   Future<List<ProductModel>> getProducts({String? category}) async {
     try {
       Query query = _db.collection('products').where('isActive', isEqualTo: true);
-      
       if (category != null && category != 'All') {
         query = query.where('category', isEqualTo: category);
       }
-
       final snapshot = await query.get();
-      if (snapshot.docs.isEmpty && (category == null || category == 'All')) {
-        return _mockProducts.where((p) => !p.isFlashSale && p.rating < 4.8).toList();
+      List<ProductModel> realProducts = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+
+      List<ProductModel> filteredMocks = _mockProducts;
+      if (category != null && category != 'All') {
+        filteredMocks = _mockProducts.where((p) => p.category == category).toList();
       }
-      
-      return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+
+      final all = [...realProducts, ...filteredMocks];
+      return all.where((p) => p.coverImage.isNotEmpty).toList();
     } catch (e) {
-      return _mockProducts.where((p) => !p.isFlashSale && p.rating < 4.8).toList();
+      List<ProductModel> filteredMocks = _mockProducts;
+      if (category != null && category != 'All') {
+        filteredMocks = _mockProducts.where((p) => p.category == category).toList();
+      }
+      return filteredMocks.where((p) => p.coverImage.isNotEmpty).toList();
+    }
+  }
+
+  /// Get ALL products for Admin
+  Future<List<ProductModel>> getAllProductsAdmin() async {
+    try {
+      final snapshot = await _db.collection('products').get();
+      List<ProductModel> realProducts = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+      
+      // Combine with mocks for variety in demo, but usually admin only manages real ones
+      return [...realProducts, ..._mockProducts];
+    } catch (e) {
+      return _mockProducts;
     }
   }
 
   Future<List<ProductModel>> getSellerProducts(String sellerId) async {
-    final snapshot = await _db.collection('products')
-        .where('sellerId', isEqualTo: sellerId)
-        .get();
-    return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+    try {
+      final snapshot = await _db.collection('products')
+          .where('sellerId', isEqualTo: sellerId)
+          .get();
+      return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<List<ProductModel>> getFlashSaleProducts() async {
-    final snapshot = await _db.collection('products')
-        .where('isFlashSale', isEqualTo: true)
-        .where('isActive', isEqualTo: true)
-        .get();
-    
-    if (snapshot.docs.isEmpty) {
-      return _mockProducts.where((p) => p.isFlashSale).toList();
+    try {
+      final snapshot = await _db.collection('products')
+          .where('isFlashSale', isEqualTo: true)
+          .where('isActive', isEqualTo: true)
+          .get();
+      
+      List<ProductModel> real = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+      List<ProductModel> mocks = _mockProducts.where((p) => p.isFlashSale).toList();
+      
+      final all = [...real, ...mocks];
+      return all.where((p) => p.coverImage.isNotEmpty).toList();
+    } catch (e) {
+      return _mockProducts.where((p) => p.isFlashSale && p.coverImage.isNotEmpty).toList();
     }
-    return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
   }
 
   Future<List<ProductModel>> getRecommendedProducts() async {
-    final snapshot = await _db.collection('products')
-        .where('rating', isGreaterThanOrEqualTo: 4.8)
-        .where('isActive', isEqualTo: true)
-        .get();
+    try {
+      final snapshot = await _db.collection('products')
+          .where('rating', isGreaterThanOrEqualTo: 4.8)
+          .where('isActive', isEqualTo: true)
+          .get();
 
-    if (snapshot.docs.isEmpty) {
-      return _mockProducts.where((p) => p.rating >= 4.8).toList();
+      List<ProductModel> real = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+      List<ProductModel> mocks = _mockProducts.where((p) => p.rating >= 4.8).toList();
+      
+      final all = [...real, ...mocks];
+      return all.where((p) => p.coverImage.isNotEmpty).toList();
+    } catch (e) {
+      return _mockProducts.where((p) => p.rating >= 4.8 && p.coverImage.isNotEmpty).toList();
     }
-    return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
   }
 
   Future<List<ProductModel>> searchProducts(String query) async {
     final q = query.toLowerCase().trim();
     if (q.isEmpty) return [];
     
-    // For real search in Firestore, usually we'd use Algolia/Elasticsearch
-    // or fetch and filter client-side for small datasets.
-    final snapshot = await _db.collection('products').get();
-    final all = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
-    
-    final results = all.where((p) {
+    final all = await getProducts();
+    return all.where((p) {
       return p.title.toLowerCase().contains(q) || 
              p.category.toLowerCase().contains(q) || 
              p.description.toLowerCase().contains(q);
     }).toList();
-
-    if (results.isEmpty) {
-       return _mockProducts.where((p) => p.title.toLowerCase().contains(q)).toList();
-    }
-    return results;
   }
 
   Future<ProductModel?> getProductById(String id) async {
-    final doc = await _db.collection('products').doc(id).get();
-    if (doc.exists) return _productFromDoc(doc);
-    
     try {
+      final doc = await _db.collection('products').doc(id).get();
+      if (doc.exists) return _productFromDoc(doc);
+      
       return _mockProducts.firstWhere((p) => p.id == id);
     } catch (_) {
       return null;
@@ -93,8 +118,7 @@ class ProductService {
   }
 
   Future<List<ProductModel>> getAllProducts() async {
-    final snapshot = await _db.collection('products').get();
-    return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+    return getProducts();
   }
 
   Future<ProductModel> addProduct(ProductModel p) async {
