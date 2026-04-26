@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/product_model.dart';
@@ -5,12 +6,14 @@ import '../models/order_model.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/order_service.dart';
+import '../services/cloudinary_service.dart';
 
 /// Provider for admin-specific functionality
 class AdminProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   final ProductService _productService = ProductService();
   final OrderService _orderService = OrderService();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
   List<UserModel> _users = [];
   List<ProductModel> _products = [];
@@ -33,7 +36,7 @@ class AdminProvider extends ChangeNotifier {
     try {
       final results = await Future.wait([
         _authService.getAllUsers(),
-        _productService.getAllProducts(),
+        _productService.getAllProductsAdmin(),
         _orderService.getAllOrders(),
         _authService.getPendingSellers(),
       ]);
@@ -51,11 +54,10 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  /// Toggle user block status
+  /// Manage Users
   Future<bool> toggleUserBlock(String userId) async {
     try {
       await _authService.toggleBlockUser(userId);
-      // Update local state
       final idx = _users.indexWhere((u) => u.id == userId);
       if (idx != -1) {
         _users[idx] = _users[idx].copyWith(isBlocked: !_users[idx].isBlocked);
@@ -68,19 +70,14 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  /// Approve seller application
   Future<bool> approveSeller(String userId) async {
     try {
       await _authService.approveSeller(userId);
-      // Update local state
       _pendingSellers.removeWhere((u) => u.id == userId);
-
-      // Update in main users list if present
       final idx = _users.indexWhere((u) => u.id == userId);
       if (idx != -1) {
         _users[idx] = _users[idx].copyWith(isApprovedSeller: true);
       }
-
       notifyListeners();
       return true;
     } catch (e) {
@@ -89,7 +86,57 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
-  /// Delete product (Admin)
+  /// Manage Products
+  Future<bool> addProduct(ProductModel product, List<File> imageFiles) async {
+    _setLoading(true);
+    try {
+      // 1. Upload to Cloudinary
+      final urls = await _cloudinaryService.uploadMultipleImages(imageFiles);
+      if (urls.isEmpty) throw Exception('Image upload failed');
+
+      // 2. Add to Firestore
+      final newProduct = product.copyWith(images: urls);
+      final added = await _productService.addProduct(newProduct);
+      
+      _products.insert(0, added);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateProduct(ProductModel product, {List<File>? newImages}) async {
+    _setLoading(true);
+    try {
+      List<String> finalUrls = product.images;
+
+      // 1. If new images picked, upload them
+      if (newImages != null && newImages.isNotEmpty) {
+        final uploaded = await _cloudinaryService.uploadMultipleImages(newImages);
+        if (uploaded.isNotEmpty) finalUrls = uploaded;
+      }
+
+      // 2. Update in Firestore
+      final updated = product.copyWith(images: finalUrls);
+      await _productService.updateProduct(updated);
+      
+      final idx = _products.indexWhere((p) => p.id == updated.id);
+      if (idx != -1) _products[idx] = updated;
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<bool> deleteProduct(String productId) async {
     try {
       await _productService.deleteProduct(productId);

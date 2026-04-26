@@ -35,6 +35,7 @@ import '../screens/profile/settings_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/manage_users_screen.dart';
 import '../screens/admin/manage_products_screen.dart';
+import '../screens/admin/admin_add_product_screen.dart';
 
 // Main Shell
 import '../screens/buyer/main_shell.dart';
@@ -71,6 +72,7 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String manageUsers = '/manage-users';
   static const String manageProducts = '/manage-products';
+  static const String adminAddProduct = '/admin-add-product';
 
   static Route<dynamic> generateRoute(RouteSettings settings_) {
     switch (settings_.name) {
@@ -145,6 +147,12 @@ class AppRoutes {
         return _buildRoute(const ManageUsersScreen(), settings_);
       case manageProducts:
         return _buildRoute(const ManageProductsScreen(), settings_);
+      case adminAddProduct:
+        final args = settings_.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          AdminAddProductScreen(product: args?['product']),
+          settings_,
+        );
       default:
         return _buildRoute(const SplashScreen(), settings_);
     }
