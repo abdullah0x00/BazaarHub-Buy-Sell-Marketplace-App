@@ -160,27 +160,116 @@ class OrderService {
     return null;
   }
 
-  /// Seller analytics data from Firestore
+  /// Seller analytics data from Firestore (Real dynamic data)
   Future<Map<String, dynamic>> getSellerAnalytics(String sellerId) async {
     final sellerOrders = await getSellerOrders(sellerId);
 
     double totalRevenue = 0;
     int totalItemsSold = 0;
 
+    // Data for charts
+    Map<String, double> monthlyRevenue = {};
+    Map<String, int> monthlyOrders = {};
+
+    final List<String> last6Months = [];
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime.now().subtract(Duration(days: i * 30));
+      final monthKey = _monthName(date.month);
+      last6Months.add(monthKey);
+      monthlyRevenue[monthKey] = 0;
+      monthlyOrders[monthKey] = 0;
+    }
+
     for (final order in sellerOrders) {
+      final monthKey = _monthName(order.createdAt.month);
+      
+      bool isMyOrder = false;
       for (final item in order.items) {
         if (item.sellerId == sellerId) {
           totalRevenue += item.subtotal;
           totalItemsSold += item.quantity;
+          
+          if (monthlyRevenue.containsKey(monthKey)) {
+            monthlyRevenue[monthKey] = monthlyRevenue[monthKey]! + item.subtotal;
+          }
+          isMyOrder = true;
         }
       }
+      
+      if (isMyOrder && monthlyOrders.containsKey(monthKey)) {
+        monthlyOrders[monthKey] = monthlyOrders[monthKey]! + 1;
+      }
     }
+
+    final List<Map<String, dynamic>> monthlyData = last6Months.map((m) {
+      return {
+        'month': m,
+        'revenue': monthlyRevenue[m],
+        'orders': monthlyOrders[m],
+      };
+    }).toList();
 
     return {
       'totalRevenue': totalRevenue,
       'totalOrders': sellerOrders.length,
       'totalItemsSold': totalItemsSold,
       'pendingOrders': sellerOrders.where((o) => o.status == OrderStatus.pending).length,
+      'monthlyData': monthlyData,
+    };
+  }
+
+  String _monthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  }
+
+  /// Global platform analytics for Admin
+  Future<Map<String, dynamic>> getGlobalAnalytics() async {
+    final allOrders = await getAllOrders();
+    
+    double totalRevenue = 0;
+    int totalItemsSold = 0;
+    Map<String, double> categoryRevenue = {};
+    Map<String, double> monthlyRevenue = {};
+
+    final List<String> last6Months = [];
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime.now().subtract(Duration(days: i * 30));
+      final monthKey = _monthName(date.month);
+      last6Months.add(monthKey);
+      monthlyRevenue[monthKey] = 0;
+    }
+
+    for (final order in allOrders) {
+      if (order.status == OrderStatus.cancelled) continue;
+      
+      totalRevenue += order.total;
+      final monthKey = _monthName(order.createdAt.month);
+      
+      if (monthlyRevenue.containsKey(monthKey)) {
+        monthlyRevenue[monthKey] = monthlyRevenue[monthKey]! + order.total;
+      }
+
+      for (final item in order.items) {
+        totalItemsSold += item.quantity;
+        // Category revenue logic would need categories stored in OrderItem 
+        // For now, let's just track top-level stats
+      }
+    }
+
+    final List<Map<String, dynamic>> monthlyData = last6Months.map((m) {
+      return {
+        'month': m,
+        'revenue': monthlyRevenue[m],
+      };
+    }).toList();
+
+    return {
+      'totalRevenue': totalRevenue,
+      'totalOrders': allOrders.length,
+      'totalItemsSold': totalItemsSold,
+      'activeOrders': allOrders.where((o) => o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled).length,
+      'monthlyData': monthlyData,
     };
   }
 }

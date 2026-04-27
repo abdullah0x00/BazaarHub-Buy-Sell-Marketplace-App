@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 
 /// Service for uploading images to Cloudinary
 class CloudinaryService {
-  // CONFIGURATION: Replace these with your own Cloudinary credentials
-  static const String _cloudName = 'dvkq6q7qv'; // Default placeholder
-  static const String _uploadPreset = 'marketplace_app'; // Default placeholder
+  // CONFIGURATION: Using your actual Cloud Name from the screenshot
+  static const String _cloudName = 'dnm6yhueu'; 
+  static const String _uploadPreset = 'marketplace_app'; // Create an 'Unsigned' preset with this name in Cloudinary
   
   static final CloudinaryService _instance = CloudinaryService._internal();
   factory CloudinaryService() => _instance;
@@ -30,12 +30,13 @@ class CloudinaryService {
         final jsonResponse = jsonDecode(responseString);
         return jsonResponse['secure_url'];
       } else {
-        debugPrint('Cloudinary Error: ${response.statusCode} - $responseString');
-        return '';
+        final errorMsg = jsonDecode(responseString)['error']?['message'] ?? 'Unknown Cloudinary error';
+        debugPrint('Cloudinary Error: ${response.statusCode} - $errorMsg');
+        throw Exception('Cloudinary Upload Failed: $errorMsg');
       }
     } catch (e) {
       debugPrint('Cloudinary Exception: $e');
-      return '';
+      rethrow;
     }
   }
 

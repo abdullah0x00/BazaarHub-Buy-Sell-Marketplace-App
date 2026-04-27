@@ -14,6 +14,8 @@ class AppConstants {
   static const String keyDarkMode = 'dark_mode';
   static const String keyLanguage = 'language';
   static const String keyNotifications = 'notifications_enabled';
+  static const String keyTwoFactor = 'two_factor_enabled';
+  static const String keyBiometric = 'biometric_enabled';
 
   // Demo Admin Credentials
   static const String adminEmail = 'admin@bazaarhub.com';

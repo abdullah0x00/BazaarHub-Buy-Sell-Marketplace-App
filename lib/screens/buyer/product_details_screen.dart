@@ -302,17 +302,18 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           color: AppColors.primary,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      if (_product!.originalPrice != null) ...[
-                        Text(
-                          'PKR ${_formatPrice(_product!.originalPrice!)}',
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            color: AppColors.textHint,
-                            decoration: TextDecoration.lineThrough,
+                      if (_product!.discountPercent != null) ...[
+                        const SizedBox(width: 10),
+                        if (_product!.originalPrice != null)
+                          Text(
+                            'PKR ${_formatPrice(_product!.originalPrice!)}',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              color: AppColors.textHint,
+                              decoration: TextDecoration.lineThrough,
+                            ),
                           ),
-                        ),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(

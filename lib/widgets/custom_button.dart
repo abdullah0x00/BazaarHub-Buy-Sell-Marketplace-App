@@ -11,7 +11,9 @@ class CustomButton extends StatelessWidget {
   final double height;
   final IconData? icon;
   final Color? color;
+  final Color? textColor;
   final double borderRadius;
+  final Widget? prefix;
 
   const CustomButton({
     super.key,
@@ -23,12 +25,16 @@ class CustomButton extends StatelessWidget {
     this.height = 52,
     this.icon,
     this.color,
+    this.textColor,
     this.borderRadius = 14,
+    this.prefix,
   });
 
   @override
   Widget build(BuildContext context) {
-    final buttonColor = color ?? AppColors.primary;
+    final theme = Theme.of(context);
+    final buttonColor = color ?? theme.primaryColor;
+    final finalTextColor = textColor ?? (outlined ? buttonColor : Colors.white);
 
     if (outlined) {
       return SizedBox(
@@ -36,14 +42,16 @@ class CustomButton extends StatelessWidget {
         height: height,
         child: OutlinedButton(
           onPressed: isLoading ? null : onPressed,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: buttonColor,
-            side: BorderSide(color: buttonColor, width: 1.5),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius),
+          style: theme.outlinedButtonTheme.style?.copyWith(
+            foregroundColor: WidgetStateProperty.all(finalTextColor),
+            side: WidgetStateProperty.all(BorderSide(color: buttonColor, width: 1.2)),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(borderRadius),
+              ),
             ),
           ),
-          child: _buildChild(buttonColor),
+          child: _buildChild(finalTextColor),
         ),
       );
     }
@@ -53,16 +61,21 @@ class CustomButton extends StatelessWidget {
       height: height,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: buttonColor,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: buttonColor.withValues(alpha: 0.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return buttonColor.withValues(alpha: 0.5);
+            }
+            return buttonColor;
+          }),
+          foregroundColor: WidgetStateProperty.all(finalTextColor),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
           ),
-          elevation: 0,
         ),
-        child: _buildChild(Colors.white),
+        child: _buildChild(finalTextColor),
       ),
     );
   }
@@ -74,39 +87,39 @@ class CustomButton extends StatelessWidget {
         height: 22,
         child: CircularProgressIndicator(
           strokeWidth: 2.5,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            outlined ? AppColors.primary : Colors.white,
-          ),
+          valueColor: AlwaysStoppedAnimation<Color>(contentColor),
         ),
       );
     }
 
-    if (icon != null) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Text(
+    Widget label = Text(
       text,
-      style: const TextStyle(
+      textAlign: TextAlign.center,
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
+        color: contentColor,
         fontFamily: 'Poppins',
       ),
+    );
+
+    List<Widget> children = [];
+    if (prefix != null) {
+      children.add(prefix!);
+      children.add(const SizedBox(width: 12));
+    } else if (icon != null) {
+      children.add(Icon(icon, size: 18, color: contentColor));
+      children.add(const SizedBox(width: 8));
+    }
+    
+    children.add(label);
+
+    if (children.length == 1) return label;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: children,
     );
   }
 }
@@ -128,18 +141,16 @@ class IconTextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final buttonColor = color ?? theme.primaryColor;
+    
     return TextButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16, color: color ?? AppColors.primary),
-      label: Text(
-        label,
-        style: TextStyle(
-          color: color ?? AppColors.primary,
-          fontFamily: 'Poppins',
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
+      style: theme.textButtonTheme.style?.copyWith(
+        foregroundColor: WidgetStateProperty.all(buttonColor),
       ),
+      icon: Icon(icon, size: 16),
+      label: Text(label),
     );
   }
 }

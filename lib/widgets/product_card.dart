@@ -142,7 +142,7 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                   // Discount badge
-                  if (product.discountPercent != null)
+                  if (product.discountPercent != null && product.discountPercent! > 0)
                     Positioned(
                       bottom: 8,
                       right: 8,

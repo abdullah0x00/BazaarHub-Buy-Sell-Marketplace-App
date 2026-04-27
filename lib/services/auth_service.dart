@@ -238,7 +238,7 @@ class AuthService {
       phone: phone,
       bankAccount: bankAccount,
       warehouseAddress: warehouseAddress,
-      isApprovedSeller: true, // Approve immediately so dashboard opens
+      isApprovedSeller: false, // Set to false so Admin can approve
     );
     
     await _db.collection('users').doc(user.id).update(updatedUser.toJson());

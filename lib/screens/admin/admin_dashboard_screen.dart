@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../config/routes.dart';
 import '../../models/user_model.dart';
+import '../../models/order_model.dart';
 import '../../widgets/loading_widget.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -80,8 +81,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            _QuickStat(label: 'Total Revenue', value: 'PKR ${_calculateRevenue(admin.orders)}', icon: Icons.monetization_on_rounded),
                             _QuickStat(label: 'Active Users', value: '${admin.users.length}', icon: Icons.people),
-                            _QuickStat(label: 'Total Products', value: '${admin.products.length}', icon: Icons.shopping_bag),
                             _QuickStat(label: 'Live Orders', value: '${admin.orders.length}', icon: Icons.local_shipping),
                           ],
                         ),
@@ -121,11 +122,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         onTap: () => Navigator.pushNamed(context, AppRoutes.manageProducts),
                       ),
                       _AdminCard(
-                        title: 'Platform Ads',
-                        subtitle: 'Promote Stores',
-                        icon: Icons.campaign_rounded,
+                        title: 'Order Tracking',
+                        subtitle: 'Status & Logistics',
+                        icon: Icons.local_shipping_rounded,
+                        color: Colors.green,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.manageOrders),
+                      ),
+                      _AdminCard(
+                        title: 'Financials',
+                        subtitle: 'Revenue & Growth',
+                        icon: Icons.analytics_rounded,
                         color: Colors.purple,
-                        onTap: () => _showWIP(context),
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.adminAnalytics),
                       ),
                       _AdminCard(
                         title: 'System Logs',
@@ -188,6 +196,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Module under construction by Admin Team.')),
     );
+  }
+
+  String _calculateRevenue(List<OrderModel> orders) {
+    double total = 0;
+    for (var order in orders) {
+      if (order.status != OrderStatus.cancelled) {
+        total += order.total;
+      }
+    }
+    if (total >= 1000) {
+      return (total / 1000).toStringAsFixed(1) + 'k';
+    }
+    return total.toStringAsFixed(0);
   }
 }
 

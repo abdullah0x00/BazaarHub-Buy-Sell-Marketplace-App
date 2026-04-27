@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/cloudinary_service.dart';
 import '../utils/constants.dart';
 
 /// Auth state management using Provider pattern
@@ -13,6 +14,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isDarkMode = false;
   bool _notificationsEnabled = true;
+  bool _twoFactorEnabled = false;
+  bool _biometricEnabled = false;
   String _selectedLanguage = 'English';
   String? _error;
 
@@ -26,25 +29,29 @@ class AuthProvider extends ChangeNotifier {
           !(_currentUser?.isApprovedSeller ?? false));
   bool get isDarkMode => _isDarkMode;
   bool get notificationsEnabled => _notificationsEnabled;
+  bool get twoFactorEnabled => _twoFactorEnabled;
+  bool get biometricEnabled => _biometricEnabled;
   String get selectedLanguage => _selectedLanguage;
   String? get error => _error;
 
-  /// Update profile picture
+  /// Update profile picture using Cloudinary
   Future<bool> updateProfilePicture(File image) async {
     if (_currentUser == null) return false;
     _setLoading(true);
+    _error = null;
     try {
-      final imageUrl = await _authService.uploadFile(image, folder: 'profile_pictures');
+      final cloudinary = CloudinaryService();
+      final imageUrl = await cloudinary.uploadImage(image);
+      
       if (imageUrl.isNotEmpty) {
         final updatedUser = _currentUser!.copyWith(avatar: imageUrl);
-        // Direct call to service to avoid nested setLoading
         _currentUser = await _authService.updateProfile(updatedUser);
         notifyListeners();
         return true;
       }
       return false;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceAll('Exception: ', '');
       return false;
     } finally {
       _setLoading(false);
@@ -84,6 +91,8 @@ class AuthProvider extends ChangeNotifier {
     _isDarkMode = prefs.getBool(AppConstants.keyDarkMode) ?? false;
     _notificationsEnabled =
         prefs.getBool(AppConstants.keyNotifications) ?? true;
+    _twoFactorEnabled = prefs.getBool(AppConstants.keyTwoFactor) ?? false;
+    _biometricEnabled = prefs.getBool(AppConstants.keyBiometric) ?? false;
     _selectedLanguage = prefs.getString(AppConstants.keyLanguage) ?? 'English';
     _currentUser = await _authService.getSavedUser();
     _setLoading(false);
@@ -219,6 +228,22 @@ class AuthProvider extends ChangeNotifier {
     _notificationsEnabled = !_notificationsEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.keyNotifications, _notificationsEnabled);
+    notifyListeners();
+  }
+
+  /// Toggle 2FA
+  Future<void> toggleTwoFactor() async {
+    _twoFactorEnabled = !_twoFactorEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyTwoFactor, _twoFactorEnabled);
+    notifyListeners();
+  }
+
+  /// Toggle Biometrics
+  Future<void> toggleBiometric() async {
+    _biometricEnabled = !_biometricEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyBiometric, _biometricEnabled);
     notifyListeners();
   }
 

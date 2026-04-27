@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
+import '../services/cloudinary_service.dart';
 
 /// Product state management using Provider
 class ProductProvider extends ChangeNotifier {
   final ProductService _service = ProductService();
+  final CloudinaryService _cloudinary = CloudinaryService();
 
   List<ProductModel> _products = [];
   List<ProductModel> _sellerProducts = [];
@@ -57,7 +60,63 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Load products by category
+  /// Add product with Cloudinary images
+  Future<bool> addProduct(ProductModel product, List<File> imageFiles) async {
+    _setLoading(true);
+    try {
+      // 1. Upload to Cloudinary
+      final urls = await _cloudinary.uploadMultipleImages(imageFiles);
+      if (urls.isEmpty) throw Exception('Failed to upload images to Cloudinary');
+
+      // 2. Save to Firestore
+      final productWithImages = product.copyWith(images: urls);
+      final added = await _service.addProduct(productWithImages);
+      
+      _products.insert(0, added);
+      _sellerProducts.insert(0, added);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Update product with optional new images
+  Future<bool> updateProduct(ProductModel product, {List<File>? newImageFiles}) async {
+    _setLoading(true);
+    try {
+      List<String> finalUrls = product.images;
+
+      // If new images provided, upload them
+      if (newImageFiles != null && newImageFiles.isNotEmpty) {
+        final uploaded = await _cloudinary.uploadMultipleImages(newImageFiles);
+        if (uploaded.isNotEmpty) finalUrls = uploaded;
+      }
+
+      final updatedProduct = product.copyWith(images: finalUrls);
+      await _service.updateProduct(updatedProduct);
+      
+      // Update local state
+      final idx = _products.indexWhere((p) => p.id == updatedProduct.id);
+      if (idx != -1) _products[idx] = updatedProduct;
+      
+      final sIdx = _sellerProducts.indexWhere((p) => p.id == updatedProduct.id);
+      if (sIdx != -1) _sellerProducts[sIdx] = updatedProduct;
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Other existing methods...
   Future<void> loadByCategory(String category) async {
     _setLoading(true);
     try {
@@ -69,7 +128,6 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Search products
   Future<void> search(String query) async {
     if (query.trim().isEmpty) {
       _searchResults = [];
@@ -84,12 +142,19 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Get product by ID
-  Future<ProductModel?> getProductById(String id) async {
-    return _service.getProductById(id);
+  Future<bool> deleteProduct(String productId) async {
+    try {
+      await _service.deleteProduct(productId);
+      _products.removeWhere((p) => p.id == productId);
+      _sellerProducts.removeWhere((p) => p.id == productId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    }
   }
 
-  /// Toggle wishlist
   void toggleWishlist(String productId) {
     if (_wishlist.contains(productId)) {
       _wishlist.remove(productId);
@@ -106,53 +171,8 @@ class ProductProvider extends ChangeNotifier {
     return _products.where((p) => _wishlist.contains(p.id)).toList();
   }
 
-  /// Add product (seller)
-  Future<bool> addProduct(ProductModel product) async {
-    try {
-      final added = await _service.addProduct(product);
-      _products.insert(0, added);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    }
-  }
-
-  /// Update product (seller)
-  Future<bool> updateProduct(ProductModel product) async {
-    try {
-      final updated = await _service.updateProduct(product);
-      final idx = _products.indexWhere((p) => p.id == updated.id);
-      if (idx != -1) _products[idx] = updated;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    }
-  }
-
-  /// Delete product (seller/admin)
-  Future<bool> deleteProduct(String productId) async {
-    try {
-      await _service.deleteProduct(productId);
-      _products.removeWhere((p) => p.id == productId);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      return false;
-    }
-  }
-
   void _setLoading(bool loading) {
     _isLoading = loading;
-    notifyListeners();
-  }
-
-  void clearError() {
-    _error = null;
     notifyListeners();
   }
 }

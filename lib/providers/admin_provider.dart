@@ -149,6 +149,31 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
+  /// Manage Orders
+  Future<bool> updateOrderStatus(String orderId, OrderStatus status) async {
+    try {
+      final updatedOrder = await _orderService.updateOrderStatus(orderId, status);
+      final idx = _orders.indexWhere((o) => o.id == orderId);
+      if (idx != -1) {
+        _orders[idx] = updatedOrder;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> getPlatformAnalytics() async {
+    try {
+      return await _orderService.getGlobalAnalytics();
+    } catch (e) {
+      _error = e.toString();
+      return {};
+    }
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

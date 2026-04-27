@@ -7,7 +7,6 @@ import '../../config/theme.dart';
 import '../../models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
-import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
 import '../../utils/validators.dart';
 import '../../widgets/custom_button.dart';
@@ -95,18 +94,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     
     try {
       final auth = context.read<AuthProvider>();
-      final authService = AuthService();
       
-      // 1. Upload all picked images
-      List<String> uploadedUrls = [];
-      for (var file in _pickedFiles) {
-        final url = await authService.uploadFile(file);
-        if (url.isNotEmpty) uploadedUrls.add(url);
-      }
-
-      if (uploadedUrls.isEmpty) throw Exception("Failed to upload images");
-
-      // 2. Create product model
+      // 1. Create product model (images will be set by provider after upload)
       final product = ProductModel(
         id: const Uuid().v4(),
         sellerId: auth.currentUser!.id,
@@ -115,21 +104,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
         description: _descCtrl.text.trim(),
         price: double.parse(_priceCtrl.text),
         originalPrice: _origPriceCtrl.text.isNotEmpty ? double.parse(_origPriceCtrl.text) : null,
-        images: uploadedUrls,
+        images: [], // Handled by provider
         category: _selectedCategory,
         stock: int.parse(_stockCtrl.text),
         isFlashSale: _isFlashSale,
         createdAt: DateTime.now(),
       );
 
-      // 3. Save to provider
-      final success = await productProvider.addProduct(product);
+      // 2. Save to provider (passes files for Cloudinary upload)
+      final success = await productProvider.addProduct(product, _pickedFiles);
       
       if (success) {
         messenger.showSnackBar(
           const SnackBar(content: Text('Product added successfully!'), backgroundColor: AppColors.success),
         );
         navigator.pop();
+      } else {
+        messenger.showSnackBar(
+          SnackBar(content: Text(productProvider.error ?? 'Failed to add product'), backgroundColor: AppColors.error),
+        );
       }
     } catch (e) {
       messenger.showSnackBar(

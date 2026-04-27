@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../models/product_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
+import '../../services/order_service.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/empty_state_widget.dart';
 
@@ -15,13 +18,7 @@ class SellerDashboardScreen extends StatefulWidget {
 }
 
 class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
-  final Map<String, dynamic> _mockAnalytics = {
-    'totalRevenue': 125000.0,
-    'totalOrders': 45,
-    'pendingOrders': 3,
-  };
-  
-  List<ProductModel> _products = [];
+  Map<String, dynamic>? _analytics;
   bool _loading = true;
 
   @override
@@ -30,7 +27,6 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
 
     final user = context.read<AuthProvider>().currentUser;
 
-    // Direct Route Protection - Strict check using isSeller getter
     if (user == null || user.isSeller != true) {
       Future.microtask(() {
         if (mounted) {
@@ -40,33 +36,51 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
       return;
     }
 
-    _loadLocalData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
-  void _loadLocalData() {
+  Future<void> _load() async {
+    final user = context.read<AuthProvider>().currentUser;
+    final productProvider = context.read<ProductProvider>();
+    if (user == null) return;
+    
     setState(() => _loading = true);
     
-    // Simulate loading local mock data instead of Firebase
-    Future.delayed(const Duration(milliseconds: 800), () {
+    try {
+      // 1. Fetch live analytics from Firebase
+      final analytics = await OrderService().getSellerAnalytics(user.id);
+      
+      // 2. Fetch All Products for this Seller from Firebase
+      await productProvider.loadSellerProducts(user.id);
+      
       if (mounted) {
         setState(() {
-          _products = ProductModel.mockProducts().take(5).toList();
+          _analytics = analytics;
           _loading = false;
         });
       }
-    });
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final productProvider = context.watch<ProductProvider>();
+    final products = productProvider.sellerProducts;
 
     // 1. Not Logged In
     if (!auth.isLoggedIn) {
       return _buildLoginPrompt('Login Required', 'Please login to manage your shop.');
     }
 
-    // 2. Main Dashboard
+    // 2. Pending Approval
+    if (auth.currentUser?.isApprovedSeller == false) {
+      return _buildPendingScreen();
+    }
+
+    // 3. Main Dashboard
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -75,17 +89,17 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFFF4511E)),
-            onPressed: _loadLocalData,
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFFF4511E)),
+            onPressed: _load,
           ),
         ],
       ),
       body: SafeArea(
         child: _loading
-            ? const LoadingWidget(message: 'Loading dashboard...')
+            ? const LoadingWidget(message: 'Syncing with Firebase...')
             : RefreshIndicator(
                 color: const Color(0xFFF4511E),
-                onRefresh: () async => _loadLocalData(),
+                onRefresh: _load,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -122,7 +136,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             onPressed: () => Navigator.pushNamed(
                               context,
                               AppRoutes.addProduct,
-                            ),
+                            ).then((_) => _load()),
                             icon: const Icon(Icons.add, size: 16),
                             label: const Text(
                               'Add Product',
@@ -158,25 +172,25 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                         children: [
                           _StatCard(
                             label: 'Total Revenue',
-                            value: 'PKR ${_fmt(_mockAnalytics['totalRevenue'])}',
+                            value: 'PKR ${_fmt(_analytics?['totalRevenue'] ?? 0)}',
                             icon: Icons.monetization_on_outlined,
                             color: AppColors.success,
                           ),
                           _StatCard(
                             label: 'Total Orders',
-                            value: '${_mockAnalytics['totalOrders']}',
+                            value: '${_analytics?['totalOrders'] ?? 0}',
                             icon: Icons.receipt_long_outlined,
                             color: AppColors.primary,
                           ),
                           _StatCard(
                             label: 'Products Listed',
-                            value: '${_products.length}',
+                            value: '${products.length}',
                             icon: Icons.inventory_2_outlined,
                             color: AppColors.azure,
                           ),
                           _StatCard(
                             label: 'Pending Orders',
-                            value: '${_mockAnalytics['pendingOrders']}',
+                            value: '${_analytics?['pendingOrders'] ?? 0}',
                             icon: Icons.pending_outlined,
                             color: AppColors.warning,
                           ),
@@ -200,21 +214,27 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             icon: Icons.bar_chart_rounded,
                             label: 'Analytics',
                             color: AppColors.azure,
-                            onTap: () {},
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.sellerAnalytics,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           _QuickAction(
                             icon: Icons.shopping_bag_outlined,
                             label: 'Orders',
                             color: AppColors.primary,
-                            onTap: () {},
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.sellerOrders,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           _QuickAction(
                             icon: Icons.inventory_outlined,
                             label: 'Products',
                             color: AppColors.success,
-                            onTap: () {},
+                            onTap: _load,
                           ),
                           const SizedBox(width: 10),
                           _QuickAction(
@@ -226,12 +246,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      // Products List
+                      // Products List (History)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'My Products',
+                            'My Product Listings',
                             style: TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 16,
@@ -240,9 +260,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: _load,
                             child: const Text(
-                              'Manage All',
+                              'Refresh All',
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 13,
@@ -253,17 +273,21 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      if (_products.isEmpty)
+                      if (products.isEmpty)
                         const EmptyStateWidget(
                           icon: Icons.inventory_2_outlined,
                           title: 'No Products Yet',
                           subtitle: 'Tap "Add Product" to start selling.',
                         )
                       else
-                        ..._products.map(
+                        ...products.map(
                           (p) => _SellerProductTile(
                             product: p,
-                            onEdit: () {},
+                            onEdit: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.editProduct,
+                              arguments: {'productId': p.id},
+                            ).then((_) => _load()),
                             onDelete: () => _confirmDelete(context, p.id),
                           ),
                         ),
@@ -306,6 +330,54 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
     );
   }
 
+  Widget _buildPendingScreen() {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text('Approval Pending')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.hourglass_empty_rounded, size: 80, color: Colors.orange),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                'Application Under Review',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Thank you for applying! Our admin team is reviewing your shop details. You will receive an email once your account is approved.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.main),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Back to Home', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _confirmDelete(BuildContext context, String productId) {
     showDialog(
       context: context,
@@ -315,11 +387,15 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                _products.removeWhere((p) => p.id == productId);
-              });
+              final success = await context.read<ProductProvider>().deleteProduct(productId);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Product deleted successfully')),
+                );
+                _load();
+              }
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),

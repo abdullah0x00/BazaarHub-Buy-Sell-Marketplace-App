@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 
 class BecomeSellerScreen extends StatefulWidget {
@@ -21,6 +24,7 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
   final _addressCtrl = TextEditingController();
   late int _currentStep;
   bool _isSubmitting = false;
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -57,6 +61,48 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
     super.dispose();
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied');
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.country}';
+        setState(() => _addressCtrl.text = address);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (_shopNameCtrl.text.isEmpty || _cnicCtrl.text.isEmpty || _addressCtrl.text.isEmpty || _bankCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,10 +127,23 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
     if (mounted) {
       setState(() => _isSubmitting = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration Successful! Welcome Seller.'), backgroundColor: Colors.green),
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Application Submitted!'),
+            content: const Text('Your seller application has been sent for approval. Admin will review your details shortly.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.pushReplacementNamed(context, AppRoutes.main);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
-        Navigator.pushReplacementNamed(context, AppRoutes.sellerDashboard);
       }
     }
   }
@@ -128,36 +187,24 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
                     children: [
                       if (_currentStep > 0)
                         Expanded(
-                          child: OutlinedButton(
+                          child: CustomButton(
+                            text: 'Back',
+                            outlined: true,
                             onPressed: () => setState(() => _currentStep--),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 52),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Back'),
                           ),
                         ),
                       if (_currentStep > 0) const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isSubmitting ? null : () {
+                        child: CustomButton(
+                          text: _currentStep == 2 ? 'Submit & Open Dashboard' : 'Continue',
+                          isLoading: _isSubmitting,
+                          onPressed: () {
                             if (_currentStep < 2) {
                               setState(() => _currentStep++);
                             } else {
                               _submit();
                             }
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            minimumSize: const Size(0, 52),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: _isSubmitting 
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : Text(
-                                _currentStep == 2 ? 'Submit & Open Dashboard' : 'Continue',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
                         ),
                       ),
                     ],
@@ -215,11 +262,85 @@ class _BecomeSellerScreenState extends State<BecomeSellerScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Warehouse Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        const Text(
+          'How would you like to add your warehouse address?',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
         const SizedBox(height: 20),
+        
+        // Current Location Option
+        _buildLocationOption(
+          icon: Icons.my_location_rounded,
+          title: 'Use Current Location',
+          subtitle: 'Fetch warehouse address automatically',
+          color: AppColors.azure,
+          onTap: _isLocating ? null : _getCurrentLocation,
+          isLoading: _isLocating,
+        ),
+        
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: Row(
+            children: [
+              Expanded(child: Divider()),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text('OR MANUALLY', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+              Expanded(child: Divider()),
+            ],
+          ),
+        ),
+
         CustomTextField(label: 'Complete Address', hint: 'House #, Street, City, etc.', controller: _addressCtrl, maxLines: 3),
         const SizedBox(height: 16),
         CustomTextField(label: 'Pickup Phone Number', hint: '03001234567', controller: _phoneCtrl, keyboardType: TextInputType.phone),
       ],
+    );
+  }
+
+  Widget _buildLocationOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback? onTap,
+    bool isLoading = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: isLoading 
+                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: color))
+                : Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+          ],
+        ),
+      ),
     );
   }
 

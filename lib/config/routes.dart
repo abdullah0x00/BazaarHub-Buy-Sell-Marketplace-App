@@ -30,11 +30,14 @@ import '../screens/seller/seller_analytics_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
+import '../screens/profile/edit_address_screen.dart';
 
 // Admin
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/manage_users_screen.dart';
 import '../screens/admin/manage_products_screen.dart';
+import '../screens/admin/manage_orders_screen.dart';
+import '../screens/admin/admin_analytics_screen.dart';
 import '../screens/admin/admin_add_product_screen.dart';
 
 // Main Shell
@@ -69,9 +72,12 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
+  static const String editAddress = '/edit-address';
   static const String adminDashboard = '/admin-dashboard';
   static const String manageUsers = '/manage-users';
   static const String manageProducts = '/manage-products';
+  static const String manageOrders = '/manage-orders';
+  static const String adminAnalytics = '/admin-analytics';
   static const String adminAddProduct = '/admin-add-product';
 
   static Route<dynamic> generateRoute(RouteSettings settings_) {
@@ -141,12 +147,18 @@ class AppRoutes {
         return _buildRoute(const EditProfileScreen(), settings_);
       case AppRoutes.settings:
         return _buildRoute(const SettingsScreen(), settings_);
+      case editAddress:
+        return _buildRoute(const EditAddressScreen(), settings_);
       case adminDashboard:
         return _buildRoute(const AdminDashboardScreen(), settings_);
       case manageUsers:
         return _buildRoute(const ManageUsersScreen(), settings_);
       case manageProducts:
         return _buildRoute(const ManageProductsScreen(), settings_);
+      case manageOrders:
+        return _buildRoute(const ManageOrdersScreen(), settings_);
+      case adminAnalytics:
+        return _buildRoute(const AdminAnalyticsScreen(), settings_);
       case adminAddProduct:
         final args = settings_.arguments as Map<String, dynamic>?;
         return _buildRoute(
@@ -165,7 +177,6 @@ class AppRoutes {
       transitionsBuilder: (_, animation, __, child) {
         return FadeTransition(opacity: animation, child: child);
       },
-      transitionDuration: const Duration(milliseconds: 250),
     );
   }
 }

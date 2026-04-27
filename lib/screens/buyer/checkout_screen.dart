@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
@@ -25,6 +27,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   String _selectedPayment = 'Cash on Delivery';
   bool _isPlacingOrder = false;
+  bool _isLocating = false;
   bool _orderPlaced = false;
   String _orderId = '';
 
@@ -44,6 +47,48 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() => _isLocating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied');
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.country}';
+        setState(() => _addressCtrl.text = address);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLocating = false);
+      }
+    }
   }
 
   Future<void> _placeOrder() async {
@@ -102,6 +147,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 title: 'Delivery Information',
                 icon: Icons.location_on_outlined,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildField('Full Name', _nameCtrl, Icons.person_outline),
                     const SizedBox(height: 12),
@@ -111,9 +157,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       Icons.phone_outlined,
                       type: TextInputType.phone,
                     ),
-                    const SizedBox(height: 12),
-                    _buildField(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Delivery Address',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLocationOption(
+                      icon: Icons.my_location_rounded,
+                      title: 'Use Current Location',
+                      onTap: _isLocating ? null : _getCurrentLocation,
+                      isLoading: _isLocating,
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(child: Divider()),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('OR', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ),
+                          Expanded(child: Divider()),
+                        ],
+                      ),
+                    ),
+                    _buildField(
+                      'Complete Address',
                       _addressCtrl,
                       Icons.home_outlined,
                       maxLines: 2,
@@ -386,6 +461,46 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (m) => '${m[1]},',
         );
+  }
+
+  Widget _buildLocationOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback? onTap,
+    bool isLoading = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.azure.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            isLoading 
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.azure))
+              : Icon(icon, color: AppColors.azure, size: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.azure,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18),
+          ],
+        ),
+      ),
+    );
   }
 }
 

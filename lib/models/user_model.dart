@@ -16,6 +16,7 @@ class UserModel {
   final String? cnic;
   final String? bankAccount;
   final String? warehouseAddress;
+  final String? shippingAddress;
   final List<String> completedOnboardingSteps;
   final DateTime createdAt;
 
@@ -32,6 +33,7 @@ class UserModel {
     this.cnic,
     this.bankAccount,
     this.warehouseAddress,
+    this.shippingAddress,
     this.completedOnboardingSteps = const [],
     required this.createdAt,
   });
@@ -63,6 +65,7 @@ class UserModel {
     String? cnic,
     String? bankAccount,
     String? warehouseAddress,
+    String? shippingAddress,
     List<String>? completedOnboardingSteps,
     DateTime? createdAt,
   }) {
@@ -79,6 +82,7 @@ class UserModel {
       cnic: cnic ?? this.cnic,
       bankAccount: bankAccount ?? this.bankAccount,
       warehouseAddress: warehouseAddress ?? this.warehouseAddress,
+      shippingAddress: shippingAddress ?? this.shippingAddress,
       completedOnboardingSteps: completedOnboardingSteps ?? this.completedOnboardingSteps,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -99,6 +103,7 @@ class UserModel {
       'cnic': cnic,
       'bankAccount': bankAccount,
       'warehouseAddress': warehouseAddress,
+      'shippingAddress': shippingAddress,
       'completedOnboardingSteps': completedOnboardingSteps,
       'createdAt': createdAt.toIso8601String(),
     };
@@ -122,6 +127,7 @@ class UserModel {
       cnic: json['cnic'],
       bankAccount: json['bankAccount'],
       warehouseAddress: json['warehouseAddress'],
+      shippingAddress: json['shippingAddress'],
       completedOnboardingSteps: List<String>.from(json['completedOnboardingSteps'] ?? []),
       createdAt: DateTime.parse(
         json['createdAt'] ?? DateTime.now().toIso8601String(),

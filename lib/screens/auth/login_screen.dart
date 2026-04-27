@@ -157,53 +157,31 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 // Google Sign In
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton(
-                    onPressed: auth.isLoading ? null : () async {
-                      final success = await auth.signInWithGoogle();
-                      if (!context.mounted) return;
-                      if (success) {
-                        if (auth.isAdmin) {
-                          Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
-                        } else {
-                          Navigator.pushReplacementNamed(context, AppRoutes.main);
-                        }
-                      } else if (auth.error != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(auth.error!), backgroundColor: AppColors.error),
-                        );
-                      }
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.divider),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.network(
-                          'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
-                          height: 22,
-                          errorBuilder: (context, error, stackTrace) => const Text(
-                            'G',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Continue with Google',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
+                CustomButton(
+                  text: 'Continue with Google',
+                  outlined: true,
+                  color: AppColors.divider,
+                  textColor: AppColors.textPrimary,
+                  prefix: Image.network(
+                    'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
+                    height: 22,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, color: Colors.blue, size: 28),
                   ),
+                  onPressed: auth.isLoading ? null : () async {
+                    final success = await auth.signInWithGoogle();
+                    if (!context.mounted) return;
+                    if (success) {
+                      if (auth.isAdmin) {
+                        Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+                      } else {
+                        Navigator.pushReplacementNamed(context, AppRoutes.main);
+                      }
+                    } else if (auth.error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(auth.error!), backgroundColor: AppColors.error),
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
                 Row(

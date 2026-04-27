@@ -68,6 +68,42 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
+            // Security
+            _SettingsSection(
+              title: 'Security',
+              children: [
+                _ToggleTile(
+                  icon: Icons.security_outlined,
+                  label: 'Two-Factor Authentication',
+                  subtitle: 'Add an extra layer of security',
+                  value: auth.twoFactorEnabled,
+                  onChanged: (_) => auth.toggleTwoFactor(),
+                ),
+                const Divider(height: 1, indent: 56),
+                _ToggleTile(
+                  icon: Icons.fingerprint_rounded,
+                  label: 'Biometric Lock',
+                  subtitle: 'Unlock with fingerprint or face ID',
+                  value: auth.biometricEnabled,
+                  onChanged: (_) => auth.toggleBiometric(),
+                ),
+                const Divider(height: 1, indent: 56),
+                _ActionTile(
+                  icon: Icons.devices_outlined,
+                  label: 'Trusted Devices',
+                  subtitle: 'Manage devices where you are logged in',
+                  onTap: () => _showWIP(context),
+                ),
+                const Divider(height: 1, indent: 56),
+                _ActionTile(
+                  icon: Icons.history_rounded,
+                  label: 'Login History',
+                  subtitle: 'See recent login activity',
+                  onTap: () => _showWIP(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             // Privacy & Support
             _SettingsSection(
               title: 'Privacy & Support',
@@ -113,7 +149,7 @@ class SettingsScreen extends StatelessWidget {
                   icon: Icons.delete_outline,
                   label: 'Delete Account',
                   labelColor: AppColors.error,
-                  onTap: () {},
+                  onTap: () => _confirmDeleteAccount(context, auth),
                 ),
               ],
             ),
@@ -133,6 +169,43 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _confirmDeleteAccount(BuildContext context, AuthProvider auth) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'This action is permanent and cannot be undone. All your data, including order history and shop details, will be deleted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Mock deletion
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion requested. Our team will contact you.'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWIP(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('This feature is coming soon!')),
     );
   }
 

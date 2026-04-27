@@ -216,7 +216,7 @@ class _AdminAddProductScreenState extends State<AdminAddProductScreen> {
               const SizedBox(height: 24),
               
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -233,13 +233,13 @@ class _AdminAddProductScreenState extends State<AdminAddProductScreen> {
                 title: const Text('Is Flash Sale?'),
                 value: _isFlashSale, 
                 onChanged: (v) => setState(() => _isFlashSale = v),
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
               SwitchListTile(
                 title: const Text('Is Active?'),
                 value: _isActive, 
                 onChanged: (v) => setState(() => _isActive = v),
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
               
               const SizedBox(height: 32),

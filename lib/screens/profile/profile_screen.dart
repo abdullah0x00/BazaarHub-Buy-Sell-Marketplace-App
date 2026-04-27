@@ -1,21 +1,75 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _updateImage() async {
+    final auth = context.read<AuthProvider>();
+    
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take a Photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source != null) {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
+      
+      if (image != null) {
+        final success = await auth.updateProfilePicture(File(image.path));
+        if (mounted) {
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppColors.success),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(auth.error ?? 'Upload failed'), backgroundColor: AppColors.error),
+            );
+          }
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.currentUser;
 
-    // Display "User" instead of "Admin User" if that's the name
-    final displayName =
-        user?.name == 'Admin User' ? 'User' : (user?.name ?? 'Guest');
+    final displayName = user?.name == 'Admin User' ? 'User' : (user?.name ?? 'Guest');
     final displayEmail = user?.email ?? 'user@bazaarhub.com';
 
     return Scaffold(
@@ -43,23 +97,44 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
               child: Column(
                 children: [
-                  // Avatar
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 4),
-                    ),
-                    child: ClipOval(
-                      child: user?.avatar != null && user!.avatar!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: user.avatar!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white)),
-                              errorWidget: (context, url, error) => _buildAvatarPlaceholder(displayName),
-                            )
-                          : _buildAvatarPlaceholder(displayName),
+                  // Avatar with Clickable Camera
+                  GestureDetector(
+                    onTap: auth.isLoading ? null : _updateImage,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 4),
+                          ),
+                          child: ClipOval(
+                            child: auth.isLoading 
+                              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                              : user?.avatar != null && user!.avatar!.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: user.avatar!,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                                    errorWidget: (context, url, error) => _buildAvatarPlaceholder(displayName),
+                                  )
+                                : _buildAvatarPlaceholder(displayName),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, size: 18, color: AppColors.primary),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -79,62 +154,64 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
                   // Shipping Address Section
                   _buildSectionTitle('Shipping Address'),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                              color: AppColors.azureSurface,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.location_on,
-                              color: AppColors.azure),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Default Address',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14)),
-                              SizedBox(height: 4),
-                              Text(
-                                'House #123, Street 5, Blue Area, Islamabad, Pakistan',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary),
-                              ),
-                            ],
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.editAddress),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                                color: AppColors.azureSurface,
+                                borderRadius: BorderRadius.circular(12)),
+                            child: const Icon(Icons.location_on,
+                                color: AppColors.azure),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Default Address',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  user?.shippingAddress ?? 'No address added yet. Tap to add.',
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.edit_outlined, size: 18, color: Colors.grey),
+                        ],
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // Preferences / Settings Section (Restored old items)
                   _buildSectionTitle('Preferences & Settings'),
                   _buildMenuCard([
                     _MenuItem(
                         Icons.person_outline,
-                        'Edit Profile',
+                        'Edit Profile Info',
                         () => Navigator.pushNamed(
                             context, AppRoutes.editProfile)),
                     _MenuItem(
@@ -149,13 +226,16 @@ class ProfileScreen extends StatelessWidget {
                         'Notifications',
                         () => Navigator.pushNamed(
                             context, AppRoutes.notifications)),
+                    _MenuItem(
+                        Icons.security_outlined,
+                        'Security & Privacy',
+                        () => Navigator.pushNamed(context, AppRoutes.settings)),
                     _MenuItem(Icons.settings_outlined, 'General Settings',
                         () => Navigator.pushNamed(context, AppRoutes.settings)),
                   ]),
 
                   const SizedBox(height: 20),
 
-                  // Seller Section
                   _buildSectionTitle('Seller Center'),
                   _buildMenuCard([
                     _MenuItem(
@@ -180,7 +260,6 @@ class ProfileScreen extends StatelessWidget {
                               context, AppRoutes.sellerAnalytics)),
                   ]),
 
-                  // Admin Section
                   if (user?.isAdmin == true || user?.email == 'admin@bazaarhub.com') ...[
                     const SizedBox(height: 20),
                     _buildSectionTitle('Platform Administration'),
@@ -195,7 +274,6 @@ class ProfileScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Logout Button
                   SizedBox(
                     width: double.infinity,
                     child: TextButton.icon(
@@ -300,7 +378,11 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () async {
               await auth.logout();
               if (context.mounted) {
-                Navigator.pushReplacementNamed(context, AppRoutes.login);
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.login,
+                  (route) => false,
+                );
               }
             },
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
@@ -314,7 +396,7 @@ class ProfileScreen extends StatelessWidget {
 class _MenuItem {
   final IconData icon;
   final String label;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   _MenuItem(this.icon, this.label, this.onTap);
 }
