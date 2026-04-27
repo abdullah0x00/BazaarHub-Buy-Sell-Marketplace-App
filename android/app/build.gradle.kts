@@ -52,6 +52,7 @@ flutter {
 }
 
 dependencies {
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     // Add the dependencies for Firebase products you want to use

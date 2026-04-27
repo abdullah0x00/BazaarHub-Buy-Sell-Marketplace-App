@@ -2,6 +2,8 @@ library;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum ProductStatus { pending, approved, rejected }
+
 class ProductModel {
   final String id;
   final String sellerId;
@@ -17,6 +19,7 @@ class ProductModel {
   final int reviewCount;
   final bool isActive;
   final bool isFlashSale;
+  final ProductStatus status;
   final DateTime createdAt;
   final Map<String, String>? specifications;
 
@@ -35,6 +38,7 @@ class ProductModel {
     this.reviewCount = 0,
     this.isActive = true,
     this.isFlashSale = false,
+    this.status = ProductStatus.approved, // Default to approved for existing
     required this.createdAt,
     this.specifications,
   });
@@ -70,6 +74,7 @@ class ProductModel {
     int? reviewCount,
     bool? isActive,
     bool? isFlashSale,
+    ProductStatus? status,
     DateTime? createdAt,
     Map<String, String>? specifications,
   }) {
@@ -88,6 +93,7 @@ class ProductModel {
       reviewCount: reviewCount ?? this.reviewCount,
       isActive: isActive ?? this.isActive,
       isFlashSale: isFlashSale ?? this.isFlashSale,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       specifications: specifications ?? this.specifications,
     );
@@ -109,6 +115,7 @@ class ProductModel {
       'reviewCount': reviewCount,
       'isActive': isActive,
       'isFlashSale': isFlashSale,
+      'status': status.name,
       'createdAt': createdAt.toIso8601String(),
       'specifications': specifications,
     };
@@ -137,6 +144,10 @@ class ProductModel {
       reviewCount: json['reviewCount'] ?? 0,
       isActive: json['isActive'] ?? true,
       isFlashSale: json['isFlashSale'] ?? false,
+      status: ProductStatus.values.firstWhere(
+        (s) => s.name == json['status'],
+        orElse: () => ProductStatus.approved,
+      ),
       createdAt: parseDate(json['createdAt']),
       specifications: json['specifications'] != null ? Map<String, String>.from(json['specifications']) : null,
     );

@@ -13,12 +13,27 @@ class ProductService {
   /// Get all active products for buyers
   Future<List<ProductModel>> getProducts({String? category}) async {
     try {
-      Query query = _db.collection('products').where('isActive', isEqualTo: true);
+      // 1. Get blocked sellers to filter them out
+      final blockedSellersSnapshot = await _db.collection('users')
+          .where('isBlocked', isEqualTo: true)
+          .where('role', isEqualTo: 'seller')
+          .get();
+      final blockedSellerIds = blockedSellersSnapshot.docs.map((doc) => doc.id).toSet();
+
+      // 2. Query only approved and active products
+      Query query = _db.collection('products')
+          .where('isActive', isEqualTo: true)
+          .where('status', isEqualTo: 'approved');
+          
       if (category != null && category != 'All') {
         query = query.where('category', isEqualTo: category);
       }
+      
       final snapshot = await query.get();
-      List<ProductModel> realProducts = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+      List<ProductModel> realProducts = snapshot.docs
+          .map((doc) => _productFromDoc(doc))
+          .where((p) => !blockedSellerIds.contains(p.sellerId)) // Filter out products from blocked sellers
+          .toList();
 
       List<ProductModel> filteredMocks = _mockProducts;
       if (category != null && category != 'All') {
@@ -123,9 +138,51 @@ class ProductService {
 
   Future<ProductModel> addProduct(ProductModel p) async {
     final docRef = _db.collection('products').doc();
-    final newProduct = p.copyWith(id: docRef.id);
+    // New products are 'pending' by default when added by a seller
+    final newProduct = p.copyWith(
+      id: docRef.id,
+      status: ProductStatus.pending,
+    );
     await docRef.set(newProduct.toJson());
+    
+    // Add notification for Admin
+    await _db.collection('notifications').add({
+      'userId': 'admin', // Global admin notification
+      'title': 'New Product Approval Request',
+      'body': '${p.sellerName} added a new product: ${p.title}',
+      'type': 'product_approval',
+      'productId': docRef.id,
+      'createdAt': FieldValue.serverTimestamp(),
+      'isRead': false,
+    });
+    
     return newProduct;
+  }
+
+  Future<void> updateProductStatus(String productId, ProductStatus status) async {
+    final doc = await _db.collection('products').doc(productId).get();
+    if (doc.exists) {
+      final product = _productFromDoc(doc);
+      await _db.collection('products').doc(productId).update({'status': status.name});
+      
+      // Notify Seller
+      await _db.collection('notifications').add({
+        'userId': product.sellerId,
+        'title': status == ProductStatus.approved ? 'Product Approved!' : 'Product Rejected',
+        'body': 'Your product "${product.title}" has been ${status.name} by the admin.',
+        'type': 'product_status',
+        'productId': productId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isRead': false,
+      });
+    }
+  }
+
+  Future<List<ProductModel>> getPendingProducts() async {
+    final snapshot = await _db.collection('products')
+        .where('status', isEqualTo: 'pending')
+        .get();
+    return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
   }
 
   Future<ProductModel> updateProduct(ProductModel p) async {

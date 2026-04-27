@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _MenuItem(
                         Icons.security_outlined,
                         'Security & Privacy',
-                        () => Navigator.pushNamed(context, AppRoutes.settings)),
+                        () => Navigator.pushNamed(context, AppRoutes.securityPrivacy)),
                     _MenuItem(Icons.settings_outlined, 'General Settings',
                         () => Navigator.pushNamed(context, AppRoutes.settings)),
                   ]),

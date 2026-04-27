@@ -116,7 +116,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       
       if (success) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Product added successfully!'), backgroundColor: AppColors.success),
+          const SnackBar(
+            content: Text('Product submitted for admin approval!'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 4),
+          ),
         );
         navigator.pop();
       } else {

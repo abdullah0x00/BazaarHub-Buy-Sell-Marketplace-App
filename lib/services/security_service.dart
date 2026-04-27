@@ -3,6 +3,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
+import 'log_service.dart';
 
 class SecurityService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -12,7 +13,9 @@ class SecurityService {
   /// Check if biometric hardware is available
   Future<bool> canCheckBiometrics() async {
     try {
-      return await _auth.canCheckBiometrics || await _auth.isDeviceSupported();
+      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+      final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
+      return canAuthenticate;
     } catch (e) {
       return false;
     }
@@ -21,9 +24,12 @@ class SecurityService {
   /// Authenticate user via Biometrics
   Future<bool> authenticate() async {
     try {
-      // Optimized for common compatibility
+      final bool canCheck = await canCheckBiometrics();
+      if (!canCheck) return false;
+
       return await _auth.authenticate(
-        localizedReason: 'Please authenticate to access your account',
+        localizedReason: 'Please scan your fingerprint or face to authenticate',
+        biometricOnly: true,
       );
     } catch (e) {
       debugPrint("Biometric Auth Error: $e");
@@ -65,6 +71,14 @@ class SecurityService {
         'platform': Platform.operatingSystem,
         'isActive': true,
       });
+
+      // 3. Log to System Logs if it's an important auth event
+      await LogService().logEvent(
+        action: 'User Login',
+        details: 'User $userId logged in using $deviceName (${Platform.operatingSystem})',
+        type: 'auth',
+        targetId: userId,
+      );
     } catch (e) {
       debugPrint("Log Login Error: $e");
     }

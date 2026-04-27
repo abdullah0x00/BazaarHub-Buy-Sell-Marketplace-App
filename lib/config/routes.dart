@@ -34,6 +34,7 @@ import '../screens/profile/edit_address_screen.dart';
 import '../screens/profile/login_history_screen.dart';
 import '../screens/profile/trusted_devices_screen.dart';
 import '../screens/profile/two_factor_auth_screen.dart';
+import '../screens/profile/security_privacy_screen.dart';
 
 // Admin
 import '../screens/admin/admin_dashboard_screen.dart';
@@ -42,6 +43,7 @@ import '../screens/admin/manage_products_screen.dart';
 import '../screens/admin/manage_orders_screen.dart';
 import '../screens/admin/admin_analytics_screen.dart';
 import '../screens/admin/admin_add_product_screen.dart';
+import '../screens/admin/system_logs_screen.dart';
 
 // Main Shell
 import '../screens/buyer/main_shell.dart';
@@ -79,12 +81,14 @@ class AppRoutes {
   static const String loginHistory = '/login-history';
   static const String trustedDevices = '/trusted-devices';
   static const String twoFactor = '/two-factor';
+  static const String securityPrivacy = '/security-privacy';
   static const String adminDashboard = '/admin-dashboard';
   static const String manageUsers = '/manage-users';
   static const String manageProducts = '/manage-products';
   static const String manageOrders = '/manage-orders';
   static const String adminAnalytics = '/admin-analytics';
   static const String adminAddProduct = '/admin-add-product';
+  static const String systemLogs = '/system-logs';
 
   static Route<dynamic> generateRoute(RouteSettings settings_) {
     switch (settings_.name) {
@@ -161,6 +165,8 @@ class AppRoutes {
         return _buildRoute(const TrustedDevicesScreen(), settings_);
       case twoFactor:
         return _buildRoute(const TwoFactorAuthScreen(), settings_);
+      case securityPrivacy:
+        return _buildRoute(const SecurityPrivacyScreen(), settings_);
       case adminDashboard:
         return _buildRoute(const AdminDashboardScreen(), settings_);
       case manageUsers:
@@ -177,6 +183,8 @@ class AppRoutes {
           AdminAddProductScreen(product: args?['product']),
           settings_,
         );
+      case systemLogs:
+        return _buildRoute(const SystemLogsScreen(), settings_);
       default:
         return _buildRoute(const SplashScreen(), settings_);
     }

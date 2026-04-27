@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 import '../../models/user_model.dart';
 import '../../widgets/loading_widget.dart';
@@ -252,7 +253,12 @@ class _UserTile extends StatelessWidget {
             onSelected: (value) async {
               if (value == 'block') {
                 final admin = context.read<AdminProvider>();
-                await admin.toggleUserBlock(user.id);
+                final auth = context.read<AuthProvider>();
+                await admin.toggleUserBlock(
+                  user.id,
+                  adminId: auth.currentUser?.id,
+                  adminName: auth.currentUser?.name,
+                );
               }
             },
             itemBuilder: (_) => [

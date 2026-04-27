@@ -31,7 +31,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   /// Delivery fee (free over PKR 5000)
-  double get deliveryFee => subtotal >= 5000 ? 0.0 : 200.0;
+  double get deliveryFee => subtotal >= 5000 ? 0.0 : 250.0;
 
   /// Grand total
   double get total => subtotal + deliveryFee;

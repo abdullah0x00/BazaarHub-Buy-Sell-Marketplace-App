@@ -72,7 +72,7 @@ class ProductProvider extends ChangeNotifier {
       final productWithImages = product.copyWith(images: urls);
       final added = await _service.addProduct(productWithImages);
       
-      _products.insert(0, added);
+      // Don't add to public _products yet, only seller's private list
       _sellerProducts.insert(0, added);
       notifyListeners();
       return true;

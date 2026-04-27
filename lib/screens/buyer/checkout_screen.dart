@@ -7,7 +7,6 @@ import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/order_service.dart';
-import '../../utils/constants.dart';
 import '../../widgets/custom_button.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -202,57 +201,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 title: 'Payment Method',
                 icon: Icons.payment_outlined,
                 child: Column(
-                  children: AppConstants.paymentMethods.map((method) {
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedPayment = method),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _selectedPayment == method
-                              ? AppColors.azureSurface
-                              : AppColors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: _selectedPayment == method
-                                ? AppColors.primary
-                                : AppColors.divider,
-                            width: _selectedPayment == method ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _selectedPayment == method
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_unchecked,
-                              color: _selectedPayment == method
-                                  ? AppColors.primary
-                                  : AppColors.textHint,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              method,
-                              style: TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                fontWeight: _selectedPayment == method
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
-                                color: _selectedPayment == method
-                                    ? AppColors.primary
-                                    : AppColors.textPrimary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                  children: [
+                    _buildPaymentTile(
+                      'Cash on Delivery',
+                      'Pay when you receive your order',
+                      'https://cdn-icons-png.flaticon.com/512/1554/1554401.png',
+                    ),
+                    _buildPaymentTile(
+                      'JazzCash',
+                      'Pay via JazzCash Wallet',
+                      'https://upload.wikimedia.org/wikipedia/commons/d/d1/JazzCash_logo.png',
+                    ),
+                    _buildPaymentTile(
+                      'EasyPaisa',
+                      'Pay via EasyPaisa Wallet',
+                      'https://seeklogo.com/images/E/easypaisa-logo-0D68069502-seeklogo.com.png',
+                    ),
+                    _buildPaymentTile(
+                      'Credit / Debit Card',
+                      'Visa, MasterCard, PayPak',
+                      'https://cdn-icons-png.flaticon.com/512/349/349221.png',
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -353,13 +323,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 120),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Total Payment', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                  Text(
+                    'PKR ${_fmt(cart.total)}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               CustomButton(
-                text: 'Place Order (PKR ${_fmt(cart.total)})',
+                text: 'Confirm Order',
                 isLoading: _isPlacingOrder,
                 onPressed: _placeOrder,
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -461,6 +456,76 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (m) => '${m[1]},',
         );
+  }
+
+  Widget _buildPaymentTile(String method, String subtitle, String iconUrl) {
+    bool isSelected = _selectedPayment == method;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedPayment = method),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 8)]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(6),
+              child: Image.network(
+                iconUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.payment, color: AppColors.textHint),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    method,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: isSelected ? AppColors.primary : AppColors.textHint,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildLocationOption({

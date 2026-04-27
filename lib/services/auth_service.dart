@@ -18,6 +18,7 @@ class AuthService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '926400748582-5ddu1c8e276a79vef4c6s4cce2lb9552.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
   );
 
@@ -92,7 +93,14 @@ class AuthService {
       if (firebaseUser != null) {
         final doc = await _db.collection('users').doc(firebaseUser.uid).get();
         if (doc.exists) {
-          final user = UserModel.fromJson(doc.data()!);
+          UserModel user = UserModel.fromJson(doc.data()!);
+          
+          // Safety check for admin email
+          if (user.email.toLowerCase().trim() == 'admin@bazaarhub.com' && user.role != UserRole.admin) {
+            user = user.copyWith(role: UserRole.admin);
+            await _db.collection('users').doc(user.id).update({'role': 'admin'});
+          }
+
           await _saveUser(user);
           return user;
         } else {
@@ -102,7 +110,7 @@ class AuthService {
             email: firebaseUser.email ?? '',
             avatar: firebaseUser.photoURL,
             createdAt: DateTime.now(),
-            role: UserRole.buyer,
+            role: firebaseUser.email?.toLowerCase().trim() == 'admin@bazaarhub.com' ? UserRole.admin : UserRole.buyer,
           );
           await _db.collection('users').doc(newUser.id).set(newUser.toJson());
           await _saveUser(newUser);
@@ -129,7 +137,15 @@ class AuthService {
       if (result.user != null) {
         final doc = await _db.collection('users').doc(result.user!.uid).get();
         if (doc.exists) {
-          final user = UserModel.fromJson(doc.data()!);
+          UserModel user = UserModel.fromJson(doc.data()!);
+          
+          // Safety check: ensure admin email always has admin role
+          if (user.email.toLowerCase().trim() == 'admin@bazaarhub.com' && user.role != UserRole.admin) {
+            user = user.copyWith(role: UserRole.admin);
+            // Optionally update database too
+            await _db.collection('users').doc(user.id).update({'role': 'admin'});
+          }
+
           if (user.isBlocked) throw Exception('Your account has been blocked.');
           await _saveUser(user);
           return user;
@@ -169,7 +185,7 @@ class AuthService {
         name: name,
         email: email.toLowerCase().trim(),
         createdAt: DateTime.now(),
-        role: UserRole.buyer,
+        role: email.toLowerCase().trim() == 'admin@bazaarhub.com' ? UserRole.admin : UserRole.buyer,
       );
 
       await _db.collection('users').doc(newUser.id).set(newUser.toJson());
