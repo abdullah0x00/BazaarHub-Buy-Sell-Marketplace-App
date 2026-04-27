@@ -43,6 +43,8 @@ dependencies:
   firebase_storage: ^12.4.1
   firebase_analytics: ^11.4.1
   google_sign_in: 6.2.1
+  local_auth: ^3.0.1
+  device_info_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:

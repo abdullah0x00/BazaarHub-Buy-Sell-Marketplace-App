@@ -31,6 +31,9 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
 import '../screens/profile/edit_address_screen.dart';
+import '../screens/profile/login_history_screen.dart';
+import '../screens/profile/trusted_devices_screen.dart';
+import '../screens/profile/two_factor_auth_screen.dart';
 
 // Admin
 import '../screens/admin/admin_dashboard_screen.dart';
@@ -73,6 +76,9 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
   static const String editAddress = '/edit-address';
+  static const String loginHistory = '/login-history';
+  static const String trustedDevices = '/trusted-devices';
+  static const String twoFactor = '/two-factor';
   static const String adminDashboard = '/admin-dashboard';
   static const String manageUsers = '/manage-users';
   static const String manageProducts = '/manage-products';
@@ -149,6 +155,12 @@ class AppRoutes {
         return _buildRoute(const SettingsScreen(), settings_);
       case editAddress:
         return _buildRoute(const EditAddressScreen(), settings_);
+      case loginHistory:
+        return _buildRoute(const LoginHistoryScreen(), settings_);
+      case trustedDevices:
+        return _buildRoute(const TrustedDevicesScreen(), settings_);
+      case twoFactor:
+        return _buildRoute(const TwoFactorAuthScreen(), settings_);
       case adminDashboard:
         return _buildRoute(const AdminDashboardScreen(), settings_);
       case manageUsers:

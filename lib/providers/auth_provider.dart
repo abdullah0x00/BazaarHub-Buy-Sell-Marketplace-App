@@ -4,11 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/cloudinary_service.dart';
+import '../services/security_service.dart';
 import '../utils/constants.dart';
 
 /// Auth state management using Provider pattern
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
+  final SecurityService _securityService = SecurityService();
 
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -72,6 +74,7 @@ class AuthProvider extends ChangeNotifier {
       final user = await _authService.signInWithGoogle();
       if (user != null) {
         _currentUser = user;
+        await _securityService.logLogin(user.id);
         notifyListeners();
         return true;
       }
@@ -106,6 +109,7 @@ class AuthProvider extends ChangeNotifier {
       final user = await _authService.login(email, password);
       if (user != null) {
         _currentUser = user;
+        await _securityService.logLogin(user.id);
         notifyListeners();
         return true;
       }
@@ -130,6 +134,7 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       _currentUser = user;
+      await _securityService.logLogin(user.id);
       notifyListeners();
       return true;
     } catch (e) {
@@ -138,6 +143,63 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// Toggle Biometrics
+  Future<bool> toggleBiometric() async {
+    final canCheck = await _securityService.canCheckBiometrics();
+    if (!canCheck) {
+      _error = "Biometrics not available on this device";
+      notifyListeners();
+      return false;
+    }
+
+    if (!_biometricEnabled) {
+      // Authenticate before enabling
+      final authenticated = await _securityService.authenticate();
+      if (!authenticated) return false;
+    }
+
+    _biometricEnabled = !_biometricEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyBiometric, _biometricEnabled);
+    notifyListeners();
+    return true;
+  }
+
+  /// Get Login History
+  Future<List<Map<String, dynamic>>> getLoginHistory() async {
+    if (_currentUser == null) return [];
+    return await _securityService.getLoginHistory(_currentUser!.id);
+  }
+
+  /// Get Trusted Devices
+  Future<List<Map<String, dynamic>>> getTrustedDevices() async {
+    if (_currentUser == null) return [];
+    return await _securityService.getTrustedDevices(_currentUser!.id);
+  }
+
+  /// Remove Device
+  Future<void> removeDevice(String deviceId) async {
+    if (_currentUser == null) return;
+    await _securityService.removeDevice(_currentUser!.id, deviceId);
+    notifyListeners();
+  }
+
+  /// Toggle 2FA
+  Future<void> toggleTwoFactor() async {
+    _twoFactorEnabled = !_twoFactorEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyTwoFactor, _twoFactorEnabled);
+    notifyListeners();
+  }
+
+  /// Toggle notifications
+  Future<void> toggleNotifications() async {
+    _notificationsEnabled = !_notificationsEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyNotifications, _notificationsEnabled);
+    notifyListeners();
   }
 
   /// Forgot password
@@ -220,30 +282,6 @@ class AuthProvider extends ChangeNotifier {
     _isDarkMode = !_isDarkMode;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.keyDarkMode, _isDarkMode);
-    notifyListeners();
-  }
-
-  /// Toggle notifications
-  Future<void> toggleNotifications() async {
-    _notificationsEnabled = !_notificationsEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(AppConstants.keyNotifications, _notificationsEnabled);
-    notifyListeners();
-  }
-
-  /// Toggle 2FA
-  Future<void> toggleTwoFactor() async {
-    _twoFactorEnabled = !_twoFactorEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(AppConstants.keyTwoFactor, _twoFactorEnabled);
-    notifyListeners();
-  }
-
-  /// Toggle Biometrics
-  Future<void> toggleBiometric() async {
-    _biometricEnabled = !_biometricEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(AppConstants.keyBiometric, _biometricEnabled);
     notifyListeners();
   }
 

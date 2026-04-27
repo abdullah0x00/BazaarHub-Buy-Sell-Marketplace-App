@@ -72,12 +72,11 @@ class SettingsScreen extends StatelessWidget {
             _SettingsSection(
               title: 'Security',
               children: [
-                _ToggleTile(
+                _ActionTile(
                   icon: Icons.security_outlined,
                   label: 'Two-Factor Authentication',
-                  subtitle: 'Add an extra layer of security',
-                  value: auth.twoFactorEnabled,
-                  onChanged: (_) => auth.toggleTwoFactor(),
+                  subtitle: auth.twoFactorEnabled ? 'Enabled' : 'Disabled',
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.twoFactor),
                 ),
                 const Divider(height: 1, indent: 56),
                 _ToggleTile(
@@ -85,21 +84,29 @@ class SettingsScreen extends StatelessWidget {
                   label: 'Biometric Lock',
                   subtitle: 'Unlock with fingerprint or face ID',
                   value: auth.biometricEnabled,
-                  onChanged: (_) => auth.toggleBiometric(),
+                  onChanged: (_) async {
+                    final success = await auth.toggleBiometric();
+                    if (!success && auth.error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(auth.error!), backgroundColor: AppColors.error),
+                      );
+                      auth.clearError();
+                    }
+                  },
                 ),
                 const Divider(height: 1, indent: 56),
                 _ActionTile(
                   icon: Icons.devices_outlined,
                   label: 'Trusted Devices',
                   subtitle: 'Manage devices where you are logged in',
-                  onTap: () => _showWIP(context),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.trustedDevices),
                 ),
                 const Divider(height: 1, indent: 56),
                 _ActionTile(
                   icon: Icons.history_rounded,
                   label: 'Login History',
                   subtitle: 'See recent login activity',
-                  onTap: () => _showWIP(context),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.loginHistory),
                 ),
               ],
             ),

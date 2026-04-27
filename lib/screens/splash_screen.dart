@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
+import '../services/security_service.dart';
 import '../utils/constants.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -51,6 +52,15 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = context.read<AuthProvider>();
 
     if (authProvider.isLoggedIn) {
+      if (authProvider.biometricEnabled) {
+        final authenticated = await SecurityService().authenticate();
+        if (!authenticated) {
+          // If auth fails, stay on splash or force login
+          // Let's force them to use password if biometric fails
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
+          return;
+        }
+      }
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else if (onboardingDone) {
       Navigator.pushReplacementNamed(context, AppRoutes.login);
