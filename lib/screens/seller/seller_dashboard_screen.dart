@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../models/product_model.dart';
-import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../services/order_service.dart';
@@ -390,7 +389,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
             onPressed: () async {
               Navigator.pop(context);
               final success = await context.read<ProductProvider>().deleteProduct(productId);
-              if (success) {
+              if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Product deleted successfully')),
                 );

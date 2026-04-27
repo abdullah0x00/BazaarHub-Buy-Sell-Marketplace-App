@@ -229,7 +229,6 @@ class OrderService {
     
     double totalRevenue = 0;
     int totalItemsSold = 0;
-    Map<String, double> categoryRevenue = {};
     Map<String, double> monthlyRevenue = {};
 
     final List<String> last6Months = [];

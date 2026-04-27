@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
 
 /// Primary filled button
 class CustomButton extends StatelessWidget {
