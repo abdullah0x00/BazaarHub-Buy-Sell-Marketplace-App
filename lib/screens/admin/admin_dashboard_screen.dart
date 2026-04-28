@@ -96,43 +96,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             color: const Color(0xFF1A237E),
             onRefresh: _refreshData,
             child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header Card with Gradient
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(color: const Color(0xFF1A237E).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8)),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('System Overview', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                        const SizedBox(height: 4),
-                        const Text('BazaarHub Management', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _QuickStat(label: 'Buyers', value: '${admin.totalBuyers}', icon: Icons.person),
-                            _QuickStat(label: 'Sellers', value: '${admin.totalSellers}', icon: Icons.store),
-                            _QuickStat(label: 'Revenue', value: 'PKR ${_calculateRevenue(admin.orders)}', icon: Icons.monetization_on_rounded),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  // System Overview Header
+                  _buildHeader(admin),
 
                   const SizedBox(height: 32),
                   
@@ -261,6 +231,41 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  Widget _buildHeader(AdminProvider admin) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF1A237E).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('System Overview', style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const SizedBox(height: 4),
+          const Text('BazaarHub Management', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _QuickStat(label: 'Buyers', value: '${admin.totalBuyers}', icon: Icons.person),
+              _QuickStat(label: 'Sellers', value: '${admin.totalSellers}', icon: Icons.store),
+              _QuickStat(label: 'Revenue', value: 'PKR ${_calculateRevenue(admin.orders)}', icon: Icons.monetization_on_rounded),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showProfileDialog(BuildContext context) {
     final admin = context.read<AdminProvider>().users.firstWhere((u) => u.role == UserRole.admin, orElse: () => UserModel(id: 'admin', name: 'Admin', email: 'admin@bazaarhub.com', createdAt: DateTime.now(), role: UserRole.admin));
     final nameCtrl = TextEditingController(text: admin.name);
@@ -289,12 +294,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  void _showWIP(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Module under construction by Admin Team.')),
     );
   }
 

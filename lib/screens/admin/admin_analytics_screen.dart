@@ -124,7 +124,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: true),
-              belowBarData: BarAreaData(show: true, color: AppColors.primary.withValues(alpha: 0.1)),
+              belowBarData: BarAreaData(show: true, color: AppColors.primary.withOpacity(0.1)),
             ),
           ],
         ),

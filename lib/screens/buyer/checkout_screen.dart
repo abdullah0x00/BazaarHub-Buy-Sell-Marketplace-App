@@ -210,12 +210,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     _buildPaymentTile(
                       'JazzCash',
                       'Pay via JazzCash Wallet',
-                      'https://upload.wikimedia.org/wikipedia/commons/d/d1/JazzCash_logo.png',
+                      'assets/images/jazzcash.png',
                     ),
                     _buildPaymentTile(
                       'EasyPaisa',
                       'Pay via EasyPaisa Wallet',
-                      'https://seeklogo.com/images/E/easypaisa-logo-0D68069502-seeklogo.com.png',
+                      'assets/images/easypaisa.png',
                     ),
                     _buildPaymentTile(
                       'Credit / Debit Card',
@@ -486,11 +486,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               padding: const EdgeInsets.all(6),
-              child: Image.network(
-                iconUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.payment, color: AppColors.textHint),
-              ),
+              child: iconUrl.startsWith('http') 
+                ? Image.network(
+                    iconUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.payment, color: AppColors.textHint),
+                  )
+                : Image.asset(
+                    iconUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.payment, color: AppColors.textHint),
+                  ),
             ),
             const SizedBox(width: 14),
             Expanded(

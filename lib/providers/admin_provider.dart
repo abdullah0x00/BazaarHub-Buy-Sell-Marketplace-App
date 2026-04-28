@@ -50,11 +50,11 @@ class AdminProvider extends ChangeNotifier {
         _productService.getPendingProducts(),
       ]);
 
-      _users = List<UserModel>.from(results[0] as Iterable);
-      _products = List<ProductModel>.from(results[1] as Iterable);
-      _orders = List<OrderModel>.from(results[2] as Iterable);
-      _pendingSellers = List<UserModel>.from(results[3] as Iterable);
-      _pendingProducts = List<ProductModel>.from(results[4] as Iterable);
+      _users = results[0] as List<UserModel>;
+      _products = results[1] as List<ProductModel>;
+      _orders = results[2] as List<OrderModel>;
+      _pendingSellers = results[3] as List<UserModel>;
+      _pendingProducts = results[4] as List<ProductModel>;
 
       _error = null;
     } catch (e) {
