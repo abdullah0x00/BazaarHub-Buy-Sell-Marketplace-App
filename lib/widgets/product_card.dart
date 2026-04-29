@@ -5,6 +5,7 @@ import '../config/routes.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/product_provider.dart';
+import '../providers/auth_provider.dart';
 
 /// Product card widget used throughout the app
 class ProductCard extends StatelessWidget {
@@ -117,7 +118,10 @@ class ProductCard extends StatelessWidget {
                       top: 8,
                       right: 8,
                       child: GestureDetector(
-                        onTap: () => productProvider.toggleWishlist(product.id),
+                        onTap: () {
+                          final auth = context.read<AuthProvider>();
+                          productProvider.toggleWishlist(product.id, auth.currentUser?.id);
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(

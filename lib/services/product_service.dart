@@ -175,6 +175,22 @@ class ProductService {
         'createdAt': FieldValue.serverTimestamp(),
         'isRead': false,
       });
+
+      // If approved, notify followers
+      if (status == ProductStatus.approved) {
+        final followers = await _db.collection('users').doc(product.sellerId).collection('followers').get();
+        for (var doc in followers.docs) {
+          await _db.collection('notifications').add({
+            'userId': doc.id,
+            'title': 'New Item from ${product.sellerName}',
+            'body': '${product.sellerName} just added a new product: ${product.title}',
+            'type': 'new_product',
+            'productId': productId,
+            'createdAt': FieldValue.serverTimestamp(),
+            'isRead': false,
+          });
+        }
+      }
     }
   }
 
@@ -194,7 +210,46 @@ class ProductService {
     await _db.collection('products').doc(id).delete();
   }
 
-  Future<List<ReviewModel>> getProductReviews(String id) async => ReviewModel.mockReviews(id);
+  Future<List<ReviewModel>> getProductReviews(String id) async {
+    try {
+      final snapshot = await _db.collection('products').doc(id).collection('reviews').orderBy('createdAt', descending: true).get();
+      if (snapshot.docs.isEmpty) return ReviewModel.mockReviews(id);
+      return snapshot.docs.map((doc) => ReviewModel.fromJson(doc.data(), doc.id)).toList();
+    } catch (e) {
+      return ReviewModel.mockReviews(id);
+    }
+  }
+
+  Future<void> addReview(String productId, ReviewModel review) async {
+    await _db.collection('products').doc(productId).collection('reviews').add(review.toJson());
+    
+    // Update product rating (Simplified)
+    final reviews = await getProductReviews(productId);
+    double totalRating = 0;
+    for (var r in reviews) {
+      totalRating += r.rating;
+    }
+    await _db.collection('products').doc(productId).update({
+      'rating': totalRating / reviews.length,
+      'reviewCount': reviews.length,
+    });
+  }
+
+  // Wishlist Logic
+  Future<List<String>> getWishlist(String userId) async {
+    final doc = await _db.collection('wishlists').doc(userId).get();
+    if (doc.exists) {
+      return List<String>.from(doc.data()?['productIds'] ?? []);
+    }
+    return [];
+  }
+
+  Future<void> updateWishlist(String userId, List<String> productIds) async {
+    await _db.collection('wishlists').doc(userId).set({
+      'productIds': productIds,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   ProductModel _productFromDoc(DocumentSnapshot doc) {
     return ProductModel.fromJson(doc.data() as Map<String, dynamic>);

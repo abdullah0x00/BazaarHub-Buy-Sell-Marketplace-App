@@ -243,7 +243,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF1A237E).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8)),
+          BoxShadow(color: const Color(0xFF1A237E).withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(
@@ -258,7 +258,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               _QuickStat(label: 'Buyers', value: '${admin.totalBuyers}', icon: Icons.person),
               _QuickStat(label: 'Sellers', value: '${admin.totalSellers}', icon: Icons.store),
-              _QuickStat(label: 'Revenue', value: 'PKR ${_calculateRevenue(admin.orders)}', icon: Icons.monetization_on_rounded),
+              _QuickStat(label: 'Net Earnings', value: 'PKR ${_calculateEarnings(admin.orders)}', icon: Icons.account_balance_wallet_rounded),
             ],
           ),
         ],
@@ -297,11 +297,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  String _calculateRevenue(List<OrderModel> orders) {
+  String _calculateEarnings(List<OrderModel> orders) {
     double total = 0;
     for (var order in orders) {
       if (order.status != OrderStatus.cancelled) {
-        total += order.total;
+        total += order.platformFee;
       }
     }
     if (total >= 1000) {
@@ -345,7 +345,7 @@ class _AdminCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +353,7 @@ class _AdminCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 16),
@@ -377,13 +377,13 @@ class _SellerRequestCard extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colors.white, 
       borderRadius: BorderRadius.circular(20),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)],
     ),
     child: Row(
       children: [
         CircleAvatar(
           radius: 24,
-          backgroundColor: const Color(0xFF1A237E).withOpacity(0.1), 
+          backgroundColor: const Color(0xFF1A237E).withValues(alpha: 0.1), 
           child: Text(user.name[0].toUpperCase(), style: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 16),
@@ -424,7 +424,7 @@ class _ProductApprovalCard extends StatelessWidget {
     decoration: BoxDecoration(
       color: Colors.white, 
       borderRadius: BorderRadius.circular(20),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)],
     ),
     child: Row(
       children: [
@@ -467,7 +467,7 @@ class _EmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [

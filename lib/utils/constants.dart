@@ -1,6 +1,4 @@
 /// App-wide constants
-library;
-
 class AppConstants {
   // App Info
   static const String appName = 'BazaarHub';

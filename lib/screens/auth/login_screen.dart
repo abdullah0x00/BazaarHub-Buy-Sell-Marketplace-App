@@ -6,6 +6,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_textfield.dart';
 import '../../utils/validators.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/product_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,6 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      final userId = auth.currentUser!.id;
+      if (context.mounted) {
+        context.read<CartProvider>().setUserId(userId);
+        context.read<ProductProvider>().loadWishlist(userId);
+      }
+
       if (auth.isAdmin) {
         Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
       } else {

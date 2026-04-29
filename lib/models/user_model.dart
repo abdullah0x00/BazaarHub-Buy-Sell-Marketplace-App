@@ -1,6 +1,4 @@
 /// User model representing both buyers and sellers
-library;
-
 enum UserRole { buyer, seller, admin }
 
 class UserModel {

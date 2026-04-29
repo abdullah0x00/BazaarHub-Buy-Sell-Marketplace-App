@@ -1,8 +1,6 @@
-/// Order model representing a purchase transaction
-library;
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Order model representing a purchase transaction
 class OrderItem {
   final String productId;
   final String productTitle;
@@ -55,6 +53,7 @@ class OrderModel {
   final List<String> sellerIds; // Added for easier Firestore querying
   final double subtotal;
   final double deliveryFee;
+  final double platformFee;
   final double total;
   final OrderStatus status;
   final String paymentMethod;
@@ -71,6 +70,7 @@ class OrderModel {
     required this.sellerIds,
     required this.subtotal,
     required this.deliveryFee,
+    this.platformFee = 0.0,
     required this.total,
     required this.status,
     required this.paymentMethod,
@@ -104,6 +104,7 @@ class OrderModel {
     'sellerIds': sellerIds,
     'subtotal': subtotal,
     'deliveryFee': deliveryFee,
+    'platformFee': platformFee,
     'total': total,
     'status': status.name,
     'paymentMethod': paymentMethod,
@@ -129,6 +130,7 @@ class OrderModel {
       sellerIds: List<String>.from(json['sellerIds'] ?? []),
       subtotal: (json['subtotal'] ?? 0.0).toDouble(),
       deliveryFee: (json['deliveryFee'] ?? 0.0).toDouble(),
+      platformFee: (json['platformFee'] ?? 0.0).toDouble(),
       total: (json['total'] ?? 0.0).toDouble(),
       status: OrderStatus.values.firstWhere((s) => s.name == json['status'], orElse: () => OrderStatus.pending),
       paymentMethod: json['paymentMethod'] ?? 'COD',
@@ -152,6 +154,7 @@ class OrderModel {
       sellerIds: sellerIds,
       subtotal: subtotal,
       deliveryFee: deliveryFee,
+      platformFee: platformFee,
       total: total,
       status: status ?? this.status,
       paymentMethod: paymentMethod,

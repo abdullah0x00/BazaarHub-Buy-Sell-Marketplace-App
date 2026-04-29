@@ -82,15 +82,15 @@ class _LogTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
-        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)],
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.05)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(_getTypeIcon(log.type), color: color, size: 20),
@@ -101,7 +101,7 @@ class _LogTile extends StatelessWidget {
             Text(log.action, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             Text(
               DateFormat('HH:mm').format(log.timestamp),
-              style: TextStyle(color: Colors.grey.withOpacity(0.8), fontSize: 11),
+              style: TextStyle(color: Colors.grey.withValues(alpha: 0.8), fontSize: 11),
             ),
           ],
         ),

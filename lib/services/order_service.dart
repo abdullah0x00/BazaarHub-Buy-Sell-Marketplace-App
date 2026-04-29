@@ -43,6 +43,9 @@ class OrderService {
 
       final docRef = _db.collection('orders').doc();
       
+      // Calculate Platform Fee (e.g., 3%)
+      final platformFee = subtotal * 0.03;
+
       final order = OrderModel(
         id: docRef.id,
         buyerId: buyerId,
@@ -51,7 +54,8 @@ class OrderService {
         sellerIds: sellerIdsSet.toList(),
         subtotal: subtotal,
         deliveryFee: deliveryFee,
-        total: subtotal + deliveryFee,
+        platformFee: platformFee,
+        total: subtotal + deliveryFee + platformFee,
         status: OrderStatus.pending,
         paymentMethod: paymentMethod,
         shippingAddress: shippingAddress,
@@ -59,7 +63,25 @@ class OrderService {
         estimatedDelivery: DateTime.now().add(const Duration(days: 5)),
       );
 
-      await docRef.set(order.toJson());
+      // --- STOCK UPDATE LOGIC ---
+      // Use a batch to update both the order and product stock atomically
+      final batch = _db.batch();
+      
+      // 1. Add the order
+      batch.set(docRef, order.toJson());
+      
+      // 2. Decrement stock for each product
+      for (var item in cartItems) {
+        final product = item['product'] as ProductModel;
+        final qty = item['quantity'] as int;
+        
+        final productRef = _db.collection('products').doc(product.id);
+        batch.update(productRef, {
+          'stock': FieldValue.increment(-qty),
+        });
+      }
+
+      await batch.commit();
       return order;
     } catch (e) {
       debugPrint("Place Order Error: $e");
@@ -228,6 +250,7 @@ class OrderService {
     final allOrders = await getAllOrders();
     
     double totalRevenue = 0;
+    double totalPlatformFee = 0;
     int totalItemsSold = 0;
     Map<String, double> monthlyRevenue = {};
 
@@ -243,6 +266,7 @@ class OrderService {
       if (order.status == OrderStatus.cancelled) continue;
       
       totalRevenue += order.total;
+      totalPlatformFee += order.platformFee;
       final monthKey = _monthName(order.createdAt.month);
       
       if (monthlyRevenue.containsKey(monthKey)) {
@@ -251,8 +275,6 @@ class OrderService {
 
       for (final item in order.items) {
         totalItemsSold += item.quantity;
-        // Category revenue logic would need categories stored in OrderItem 
-        // For now, let's just track top-level stats
       }
     }
 
@@ -265,6 +287,7 @@ class OrderService {
 
     return {
       'totalRevenue': totalRevenue,
+      'totalPlatformFee': totalPlatformFee,
       'totalOrders': allOrders.length,
       'totalItemsSold': totalItemsSold,
       'activeOrders': allOrders.where((o) => o.status != OrderStatus.delivered && o.status != OrderStatus.cancelled).length,

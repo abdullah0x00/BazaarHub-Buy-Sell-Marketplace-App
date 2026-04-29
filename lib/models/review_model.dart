@@ -1,6 +1,6 @@
-/// Review & Rating model for products
-library;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Review & Rating model for products
 class ReviewModel {
   final String id;
   final String productId;
@@ -39,20 +39,27 @@ class ReviewModel {
         'helpfulCount': helpfulCount,
       };
 
-  factory ReviewModel.fromJson(Map<String, dynamic> json) => ReviewModel(
-        id: json['id'] ?? '',
-        productId: json['productId'] ?? '',
-        userId: json['userId'] ?? '',
-        userName: json['userName'] ?? '',
-        userAvatar: json['userAvatar'],
-        rating: (json['rating'] ?? 0.0).toDouble(),
-        comment: json['comment'] ?? '',
-        images: List<String>.from(json['images'] ?? []),
-        createdAt: DateTime.parse(
-          json['createdAt'] ?? DateTime.now().toIso8601String(),
-        ),
-        helpfulCount: json['helpfulCount'] ?? 0,
-      );
+  factory ReviewModel.fromJson(Map<String, dynamic> json, [String? id]) {
+    DateTime parseDate(dynamic date) {
+      if (date == null) return DateTime.now();
+      if (date is Timestamp) return date.toDate();
+      if (date is String) return DateTime.tryParse(date) ?? DateTime.now();
+      return DateTime.now();
+    }
+
+    return ReviewModel(
+      id: id ?? json['id'] ?? '',
+      productId: json['productId'] ?? '',
+      userId: json['userId'] ?? '',
+      userName: json['userName'] ?? '',
+      userAvatar: json['userAvatar'],
+      rating: (json['rating'] ?? 0.0).toDouble(),
+      comment: json['comment'] ?? '',
+      images: List<String>.from(json['images'] ?? []),
+      createdAt: parseDate(json['createdAt']),
+      helpfulCount: json['helpfulCount'] ?? 0,
+    );
+  }
 
   /// Mock reviews for demo
   static List<ReviewModel> mockReviews(String productId) {

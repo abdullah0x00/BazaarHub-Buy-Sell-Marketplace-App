@@ -123,6 +123,133 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
       ),
     );
   }
+
+  void _showUserDetails(BuildContext context, UserModel user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: AppColors.azureSurface,
+              child: Text(
+                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              user.name,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            Text(
+              user.email,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  _detailRow('User ID', user.id),
+                  _detailRow('Account Type', user.role.name.toUpperCase()),
+                  _detailRow('Account Status', user.isBlocked ? 'Blocked' : 'Active',
+                      valueColor: user.isBlocked ? AppColors.error : AppColors.success),
+                  if (user.role == UserRole.seller)
+                    _detailRow('Seller Verified', user.isApprovedSeller ? 'Yes' : 'No',
+                        valueColor: user.isApprovedSeller ? AppColors.success : AppColors.warning),
+                  _detailRow('Member Since', user.createdAt.toString().split(' ')[0]),
+                  if (user.phone != null && user.phone!.isNotEmpty)
+                    _detailRow('Contact Number', user.phone!),
+                  if (user.role == UserRole.seller) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16, bottom: 12),
+                      child: Text(
+                        'Seller Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                          fontSize: 16,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                    _detailRow('Shop Name', user.shopName ?? 'N/A'),
+                    _detailRow('CNIC Number', user.cnic ?? 'N/A'),
+                    _detailRow('Bank Account', user.bankAccount ?? 'N/A'),
+                    _detailRow('Warehouse Address', user.warehouseAddress ?? 'N/A'),
+                  ],
+                  if (user.shippingAddress != null && user.shippingAddress!.isNotEmpty)
+                    _detailRow('Default Shipping Address', user.shippingAddress!),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textHint,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? AppColors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _UserList extends StatelessWidget {
@@ -251,7 +378,9 @@ class _UserTile extends StatelessWidget {
           ),
           PopupMenuButton<String>(
             onSelected: (value) async {
-              if (value == 'block') {
+              if (value == 'view') {
+                _showUserDetails(context, user);
+              } else if (value == 'block') {
                 final admin = context.read<AdminProvider>();
                 final auth = context.read<AuthProvider>();
                 await admin.toggleUserBlock(
@@ -279,6 +408,133 @@ class _UserTile extends StatelessWidget {
               ),
             ],
             icon: const Icon(Icons.more_vert, color: AppColors.textHint),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUserDetails(BuildContext context, UserModel user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: AppColors.azureSurface,
+              child: Text(
+                user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              user.name,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            Text(
+              user.email,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  _detailRow('User ID', user.id),
+                  _detailRow('Account Type', user.role.name.toUpperCase()),
+                  _detailRow('Account Status', user.isBlocked ? 'Blocked' : 'Active',
+                      valueColor: user.isBlocked ? AppColors.error : AppColors.success),
+                  if (user.role == UserRole.seller)
+                    _detailRow('Seller Verified', user.isApprovedSeller ? 'Yes' : 'No',
+                        valueColor: user.isApprovedSeller ? AppColors.success : AppColors.warning),
+                  _detailRow('Member Since', user.createdAt.toString().split(' ')[0]),
+                  if (user.phone != null && user.phone!.isNotEmpty)
+                    _detailRow('Contact Number', user.phone!),
+                  if (user.role == UserRole.seller) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16, bottom: 12),
+                      child: Text(
+                        'Seller Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                          fontSize: 16,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                    ),
+                    _detailRow('Shop Name', user.shopName ?? 'N/A'),
+                    _detailRow('CNIC Number', user.cnic ?? 'N/A'),
+                    _detailRow('Bank Account', user.bankAccount ?? 'N/A'),
+                    _detailRow('Warehouse Address', user.warehouseAddress ?? 'N/A'),
+                  ],
+                  if (user.shippingAddress != null && user.shippingAddress!.isNotEmpty)
+                    _detailRow('Default Shipping Address', user.shippingAddress!),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textHint,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: valueColor ?? AppColors.textPrimary,
+              fontFamily: 'Poppins',
+            ),
           ),
         ],
       ),

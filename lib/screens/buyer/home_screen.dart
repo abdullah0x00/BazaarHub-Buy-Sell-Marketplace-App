@@ -8,6 +8,7 @@ import '../../providers/product_provider.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/loading_widget.dart';
 import '../../utils/constants.dart';
+import '../../services/home_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -257,14 +258,76 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBannerSlider(BuildContext context) {
+    final products = context.watch<ProductProvider>();
+    final banners = products.banners;
+
+    if (banners.isEmpty) {
+      return Container(
+        height: 160,
+        margin: const EdgeInsets.only(top: 8),
+        child: PageView(
+          children: [
+            _buildBannerItem(context, 'Summer Collection', 'Up to 50% Off', AppColors.primary, AppColors.azure),
+            _buildBannerItem(context, 'Tech Deals', 'Free Shipping', AppColors.azure, AppColors.primaryDark),
+            _buildBannerItem(context, 'Home Style', 'Starting PKR 999', AppColors.primaryDark, AppColors.accentDark),
+          ],
+        ),
+      );
+    }
+
     return Container(
       height: 160,
       margin: const EdgeInsets.only(top: 8),
-      child: PageView(
+      child: PageView.builder(
+        itemCount: banners.length,
+        itemBuilder: (context, index) {
+          final banner = banners[index];
+          return _buildDynamicBannerItem(context, banner);
+        },
+      ),
+    );
+  }
+
+  Widget _buildDynamicBannerItem(BuildContext context, BannerModel banner) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(16),
+        image: banner.imageUrl.isNotEmpty ? DecorationImage(
+          image: NetworkImage(banner.imageUrl),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.3), BlendMode.darken),
+        ) : null,
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Row(
         children: [
-          _buildBannerItem(context, 'Summer Collection', 'Up to 50% Off', AppColors.primary, AppColors.azure),
-          _buildBannerItem(context, 'Tech Deals', 'Free Shipping', AppColors.azure, AppColors.primaryDark),
-          _buildBannerItem(context, 'Home Style', 'Starting PKR 999', AppColors.primaryDark, AppColors.accentDark),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(banner.title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(banner.subtitle, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.search, arguments: {'query': banner.targetQuery});
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primary,
+                    minimumSize: const Size(80, 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Shop Now', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -313,6 +376,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategories(BuildContext context) {
+    final products = context.watch<ProductProvider>();
+    final categories = products.categories.isNotEmpty ? products.categories : AppConstants.categories;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -334,10 +400,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
-            itemCount: AppConstants.categories.length,
+            itemCount: categories.length,
             separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (ctx, i) {
-              final cat = AppConstants.categories[i];
+              final cat = categories[i];
               return GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, AppRoutes.search, arguments: {'query': cat['name']});

@@ -4,9 +4,12 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../models/product_model.dart';
 import '../../models/review_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../services/product_service.dart';
+import '../../services/chat_service.dart';
+import '../../services/follow_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/loading_widget.dart';
 
@@ -24,6 +27,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ReviewModel> _reviews = [];
   int _selectedImageIndex = 0;
   bool _loading = true;
+  bool _isFollowing = false;
   int _qty = 1;
 
   @override
@@ -35,13 +39,40 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Future<void> _load() async {
     final p = await _service.getProductById(widget.productId);
     final reviews = await _service.getProductReviews(widget.productId);
+    
     if (mounted) {
       setState(() {
         _product = p;
         _reviews = reviews;
-        _loading = false;
       });
+      
+      if (_product != null) {
+        final auth = context.read<AuthProvider>();
+        if (auth.isLoggedIn) {
+          final following = await FollowService().isFollowing(auth.currentUser!.id, _product!.sellerId);
+          if (mounted) setState(() => _isFollowing = following);
+        }
+      }
+      
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _toggleFollow() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) {
+      Navigator.pushNamed(context, AppRoutes.login);
+      return;
+    }
+
+    final followService = FollowService();
+    if (_isFollowing) {
+      await followService.unfollowSeller(auth.currentUser!.id, _product!.sellerId);
+    } else {
+      await followService.followSeller(auth.currentUser!.id, _product!.sellerId);
+    }
+
+    if (mounted) setState(() => _isFollowing = !_isFollowing);
   }
 
   void _addToCart() {
@@ -60,6 +91,40 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     if (_product == null) return;
     context.read<CartProvider>().addItem(_product!, quantity: _qty);
     Navigator.pushNamed(context, AppRoutes.checkout);
+  }
+
+  Future<void> _startChat() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) {
+      Navigator.pushNamed(context, AppRoutes.login);
+      return;
+    }
+
+    if (auth.currentUser!.id == _product!.sellerId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You cannot chat with yourself")),
+      );
+      return;
+    }
+
+    final chatId = await ChatService().getOrCreateChat(
+      buyerId: auth.currentUser!.id,
+      sellerId: _product!.sellerId,
+      buyerName: auth.currentUser!.name,
+      sellerName: _product!.sellerName,
+    );
+
+    if (mounted) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.chatDetail,
+        arguments: {
+          'chatId': chatId,
+          'otherUserName': _product!.sellerName,
+          'otherUserId': _product!.sellerId,
+        },
+      );
+    }
   }
 
   @override
@@ -105,7 +170,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             ),
             actions: [
               GestureDetector(
-                onTap: () => productProvider.toggleWishlist(_product!.id),
+                onTap: () {
+                  final auth = context.read<AuthProvider>();
+                  productProvider.toggleWishlist(_product!.id, auth.currentUser?.id);
+                },
                 child: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -245,6 +313,28 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           fontFamily: 'Poppins',
                           fontSize: 12,
                           color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: _toggleFollow,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          minimumSize: const Size(60, 30),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(
+                              color: _isFollowing ? AppColors.divider : AppColors.primary,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          _isFollowing ? 'Following' : '+ Follow',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: _isFollowing ? AppColors.textHint : AppColors.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -519,6 +609,17 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         ),
         child: Row(
           children: [
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.azureSurface,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary),
+                onPressed: _startChat,
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: CustomButton(
                 text: inCart ? 'Go to Cart' : 'Add to Cart',

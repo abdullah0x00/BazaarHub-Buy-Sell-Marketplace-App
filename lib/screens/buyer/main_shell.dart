@@ -7,6 +7,8 @@ import 'categories_screen.dart';
 import 'cart_screen.dart';
 import 'order_history_screen.dart';
 import '../../screens/profile/profile_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -17,6 +19,19 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      if (auth.isLoggedIn) {
+        final userId = auth.currentUser!.id;
+        context.read<CartProvider>().setUserId(userId);
+        context.read<ProductProvider>().loadWishlist(userId);
+      }
+    });
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),

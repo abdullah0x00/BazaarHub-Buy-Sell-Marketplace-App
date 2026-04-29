@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
 import '../services/cloudinary_service.dart';
+import '../services/home_service.dart';
 
 /// Product state management using Provider
 class ProductProvider extends ChangeNotifier {
@@ -14,7 +15,9 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> _flashSale = [];
   List<ProductModel> _recommended = [];
   List<ProductModel> _searchResults = [];
-  final List<String> _wishlist = [];
+  List<BannerModel> _banners = [];
+  List<Map<String, String>> _categories = [];
+  List<String> _wishlist = [];
   bool _isLoading = false;
   String? _error;
 
@@ -23,6 +26,8 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> get flashSale => _flashSale;
   List<ProductModel> get recommended => _recommended;
   List<ProductModel> get searchResults => _searchResults;
+  List<BannerModel> get banners => _banners;
+  List<Map<String, String>> get categories => _categories;
   List<String> get wishlist => _wishlist;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -49,10 +54,14 @@ class ProductProvider extends ChangeNotifier {
         _service.getFlashSaleProducts(),
         _service.getRecommendedProducts(),
         _service.getProducts(),
+        HomeService().getBanners(),
+        HomeService().getCategories(),
       ]);
-      _flashSale = results[0];
-      _recommended = results[1];
-      _products = results[2];
+      _flashSale = results[0] as List<ProductModel>;
+      _recommended = results[1] as List<ProductModel>;
+      _products = results[2] as List<ProductModel>;
+      _banners = results[3] as List<BannerModel>;
+      _categories = results[4] as List<Map<String, String>>;
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -155,13 +164,27 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  void toggleWishlist(String productId) {
+  Future<void> loadWishlist(String userId) async {
+    try {
+      _wishlist = await _service.getWishlist(userId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Wishlist Load Error: $e");
+    }
+  }
+
+  void toggleWishlist(String productId, String? userId) async {
     if (_wishlist.contains(productId)) {
       _wishlist.remove(productId);
     } else {
       _wishlist.add(productId);
     }
     notifyListeners();
+
+    // Sync to Firestore if logged in
+    if (userId != null) {
+      await _service.updateWishlist(userId, _wishlist);
+    }
   }
 
   bool isWishlisted(String productId) => _wishlist.contains(productId);

@@ -1,6 +1,4 @@
 /// Form validation utilities
-library;
-
 class AppValidators {
   /// Validate email address
   static String? email(String? value) {

@@ -6,6 +6,8 @@ import '../services/auth_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/security_service.dart';
 import '../utils/constants.dart';
+import 'cart_provider.dart';
+import 'product_provider.dart';
 
 /// Auth state management using Provider pattern
 class AuthProvider extends ChangeNotifier {

@@ -17,6 +17,8 @@ import '../screens/buyer/wishlist_screen.dart';
 import '../screens/buyer/categories_screen.dart';
 import '../screens/buyer/search_screen.dart';
 import '../screens/buyer/notifications_screen.dart';
+import '../screens/buyer/chat_list_screen.dart';
+import '../screens/buyer/chat_detail_screen.dart';
 
 // Seller
 import '../screens/seller/become_seller_screen.dart';
@@ -89,6 +91,8 @@ class AppRoutes {
   static const String adminAnalytics = '/admin-analytics';
   static const String adminAddProduct = '/admin-add-product';
   static const String systemLogs = '/system-logs';
+  static const String chatList = '/chat-list';
+  static const String chatDetail = '/chat-detail';
 
   static Route<dynamic> generateRoute(RouteSettings settings_) {
     switch (settings_.name) {
@@ -185,6 +189,18 @@ class AppRoutes {
         );
       case systemLogs:
         return _buildRoute(const SystemLogsScreen(), settings_);
+      case chatList:
+        return _buildRoute(const ChatListScreen(), settings_);
+      case chatDetail:
+        final args = settings_.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          ChatDetailScreen(
+            chatId: args['chatId'],
+            otherUserName: args['otherUserName'],
+            otherUserId: args['otherUserId'],
+          ),
+          settings_,
+        );
       default:
         return _buildRoute(const SplashScreen(), settings_);
     }

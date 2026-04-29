@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../services/cart_service.dart';
+import '../services/product_service.dart';
 
 /// Cart item wrapper
 class CartItem {
@@ -13,7 +15,40 @@ class CartItem {
 
 /// Cart state management using Provider
 class CartProvider extends ChangeNotifier {
+  final CartService _cartService = CartService();
   final Map<String, CartItem> _items = {};
+  String? _userId;
+
+  void setUserId(String? id) {
+    _userId = id;
+    if (id != null) {
+      loadRemoteCart();
+    } else {
+      clearCart();
+    }
+  }
+
+  Future<void> loadRemoteCart() async {
+    if (_userId == null) return;
+    final remoteItems = await _cartService.getCart(_userId!);
+    if (remoteItems.isEmpty) return;
+
+    for (var item in remoteItems) {
+      final productId = item['productId'];
+      final quantity = item['quantity'];
+      final product = await ProductService().getProductById(productId);
+      if (product != null) {
+        _items[productId] = CartItem(product: product, quantity: quantity);
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> _sync() async {
+    if (_userId != null) {
+      await _cartService.syncCart(_userId!, cartList.map((e) => {'product': e.product, 'quantity': e.quantity}).toList());
+    }
+  }
 
   // Getters
   Map<String, CartItem> get items => _items;
@@ -54,12 +89,14 @@ class CartProvider extends ChangeNotifier {
       _items[product.id] = CartItem(product: product, quantity: quantity);
     }
     notifyListeners();
+    _sync();
   }
 
   /// Remove item from cart
   void removeItem(String productId) {
     _items.remove(productId);
     notifyListeners();
+    _sync();
   }
 
   /// Increase item quantity
@@ -69,6 +106,7 @@ class CartProvider extends ChangeNotifier {
       if (item.quantity < item.product.stock) {
         item.quantity++;
         notifyListeners();
+        _sync();
       }
     }
   }
@@ -83,6 +121,7 @@ class CartProvider extends ChangeNotifier {
         _items.remove(productId);
       }
       notifyListeners();
+      _sync();
     }
   }
 
@@ -90,6 +129,7 @@ class CartProvider extends ChangeNotifier {
   void clearCart() {
     _items.clear();
     notifyListeners();
+    _sync();
   }
 
   /// Get cart as list

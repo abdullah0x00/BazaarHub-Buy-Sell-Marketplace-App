@@ -1,7 +1,6 @@
-library;
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Product model representing items in the marketplace
 enum ProductStatus { pending, approved, rejected }
 
 class ProductModel {
@@ -203,10 +202,7 @@ class ProductModel {
       'Poetry Collection': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&fit=crop',
       'World Atlas 2024': 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&fit=crop',
       // Toys
-      'Colorful Building Blocks': 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=500&fit=crop',
-      'Monopoly Board Game': 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=500&fit=crop',
       'DIY Colorful Slime Kit': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&fit=crop',
-      'Kids Art and Craft Set': 'https://images.unsplash.com/photo-1515488764276-beab7607c1e6?w=500&fit=crop',
 
       // Vehicles
       'Portable Folding Cycle': 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=500&fit=crop',

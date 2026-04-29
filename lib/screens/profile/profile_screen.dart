@@ -223,6 +223,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         () => Navigator.pushNamed(
                             context, AppRoutes.editProfile)),
                     _MenuItem(
+                        Icons.chat_bubble_outline_rounded,
+                        'My Messages',
+                        () => Navigator.pushNamed(
+                            context, AppRoutes.chatList)),
+                    _MenuItem(
                         Icons.receipt_long_outlined,
                         'My Orders',
                         () => Navigator.pushNamed(
