@@ -46,6 +46,7 @@ import '../screens/admin/manage_orders_screen.dart';
 import '../screens/admin/admin_analytics_screen.dart';
 import '../screens/admin/admin_add_product_screen.dart';
 import '../screens/admin/system_logs_screen.dart';
+import '../screens/admin/manage_categories_screen.dart';
 
 // Main Shell
 import '../screens/buyer/main_shell.dart';
@@ -91,6 +92,7 @@ class AppRoutes {
   static const String adminAnalytics = '/admin-analytics';
   static const String adminAddProduct = '/admin-add-product';
   static const String systemLogs = '/system-logs';
+  static const String manageCategories = '/manage-categories';
   static const String chatList = '/chat-list';
   static const String chatDetail = '/chat-detail';
 
@@ -189,6 +191,8 @@ class AppRoutes {
         );
       case systemLogs:
         return _buildRoute(const SystemLogsScreen(), settings_);
+      case manageCategories:
+        return _buildRoute(const ManageCategoriesScreen(), settings_);
       case chatList:
         return _buildRoute(const ChatListScreen(), settings_);
       case chatDetail:

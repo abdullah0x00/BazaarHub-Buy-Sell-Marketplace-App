@@ -220,6 +220,9 @@ class ProductModel {
       'Healthy Fruit Granola': 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=500&fit=crop',
       'Natural Creamy Butter': 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=500&fit=crop',
 
+      // Pharmacy
+      'Multivitamin Tablets': 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&fit=crop',
+
       // Others
       'Foam Travel Neck Pillow': 'https://images.unsplash.com/photo-1520116468816-95b69f847357?w=500&fit=crop',
       'Adhesive Cable Clips': 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=500&fit=crop',
@@ -238,6 +241,7 @@ class ProductModel {
       'Toys': ['Colorful Building Blocks', 'Remote Control Car', 'Soft Stuffed Teddy Bear', '1000 Piece Jigsaw Puzzle', 'Wooden Toy Kitchen', 'Super Hero Action Figure', 'Monopoly Board Game', 'DIY Colorful Slime Kit', 'Toy Musical Keyboard', 'Kids Art and Craft Set'],
       'Vehicles': ['Fast Electric Scooter', '21 Speed Mountain Bike', 'Portable Folding Cycle', 'Pro Maple Skateboard', 'Safety Motorcycle Helmet', 'Protective Elbow Pads', 'Lightweight City Cycle', 'Kids Red Tricycle', 'Stunt Freestyle BMX', 'Foldable Adult Scooter'],
       'Food': ['Pure Organic Honey', 'Extra Long Basmati Rice', 'Freshly Roasted Coffee', 'Organic Green Tea', 'Roasted Salted Almonds', 'Dark Artisan Chocolate', 'Extra Virgin Olive Oil', 'Healthy Fruit Granola', 'Natural Creamy Butter', 'Fresh Seasonal Mangoes'],
+      'Pharmacy': ['Multivitamin Tablets', 'First Aid Kit', 'Hand Sanitizer', 'Pain Relief Gel', 'Digital Thermometer', 'Face Masks Pack', 'Vitamin C Serum', 'Antiseptic Liquid', 'Blood Pressure Monitor', 'Cough Syrup'],
       'Others': ['Decorative Gift Box', 'Plastic Storage Bin', 'Desk Calendar 2024', 'Insulated Metal Bottle', 'Foam Travel Neck Pillow', 'Adhesive Cable Clips', 'USB Portable Mini Fan', 'Wireless Key Finder', 'Eco Reusable Grocery Bag', 'Compact Luggage Scale'],
     };
 

@@ -63,12 +63,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         setState(() => _isSharing = true);
         try {
           final url = await CloudinaryService().uploadImage(File(image.path));
+          if (!mounted) return;
           final auth = context.read<AuthProvider>();
           await _chatService.sendMessage(widget.chatId, auth.currentUser!.id, '', type: MessageType.image, imageUrl: url);
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
         } finally {
-          setState(() => _isSharing = false);
+          if (mounted) setState(() => _isSharing = false);
         }
       }
     }
@@ -84,6 +85,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
       if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
         final position = await Geolocator.getCurrentPosition();
+        if (!mounted) return;
         final auth = context.read<AuthProvider>();
         await _chatService.sendMessage(
           widget.chatId, 
@@ -95,9 +97,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to get location: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to get location: $e')));
     } finally {
-      setState(() => _isSharing = false);
+      if (mounted) setState(() => _isSharing = false);
     }
   }
 

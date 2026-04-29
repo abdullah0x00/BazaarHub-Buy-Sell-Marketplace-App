@@ -4,6 +4,8 @@ import '../models/product_model.dart';
 import '../services/product_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/home_service.dart';
+import '../services/category_service.dart';
+import '../models/category_model.dart';
 
 /// Product state management using Provider
 class ProductProvider extends ChangeNotifier {
@@ -16,7 +18,7 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> _recommended = [];
   List<ProductModel> _searchResults = [];
   List<BannerModel> _banners = [];
-  List<Map<String, String>> _categories = [];
+  List<CategoryModel> _categories = [];
   List<String> _wishlist = [];
   bool _isLoading = false;
   String? _error;
@@ -27,7 +29,7 @@ class ProductProvider extends ChangeNotifier {
   List<ProductModel> get recommended => _recommended;
   List<ProductModel> get searchResults => _searchResults;
   List<BannerModel> get banners => _banners;
-  List<Map<String, String>> get categories => _categories;
+  List<CategoryModel> get categories => _categories;
   List<String> get wishlist => _wishlist;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -61,7 +63,6 @@ class ProductProvider extends ChangeNotifier {
       _recommended = results[1] as List<ProductModel>;
       _products = results[2] as List<ProductModel>;
       _banners = results[3] as List<BannerModel>;
-      _categories = results[4] as List<Map<String, String>>;
     } catch (e) {
       _error = e.toString();
     } finally {

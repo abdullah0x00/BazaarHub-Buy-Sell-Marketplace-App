@@ -9,6 +9,7 @@ import '../../widgets/product_card.dart';
 import '../../widgets/loading_widget.dart';
 import '../../utils/constants.dart';
 import '../../services/home_service.dart';
+import '../../models/category_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -376,9 +377,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategories(BuildContext context) {
-    final products = context.watch<ProductProvider>();
-    final categories = products.categories.isNotEmpty ? products.categories : AppConstants.categories;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -400,10 +398,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
+            itemCount: AppConstants.categories.length,
             separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (ctx, i) {
-              final cat = categories[i];
+              final cat = AppConstants.categories[i];
               return GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, AppRoutes.search, arguments: {'query': cat['name']});

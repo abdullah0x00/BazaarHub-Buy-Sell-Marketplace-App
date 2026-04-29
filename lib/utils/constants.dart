@@ -41,6 +41,7 @@ class AppConstants {
     {'name': 'Toys', 'icon': '🧸'},
     {'name': 'Vehicles', 'icon': '🚗'},
     {'name': 'Food', 'icon': '🍕'},
+    {'name': 'Pharmacy', 'icon': '💊'},
     {'name': 'Others', 'icon': '📦'},
   ];
 

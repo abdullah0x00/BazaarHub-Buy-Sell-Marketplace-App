@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/product_model.dart';
@@ -8,6 +9,8 @@ import '../services/product_service.dart';
 import '../services/order_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/log_service.dart';
+import '../services/category_service.dart';
+import '../models/category_model.dart';
 
 /// Provider for admin-specific functionality
 class AdminProvider extends ChangeNotifier {
@@ -16,12 +19,15 @@ class AdminProvider extends ChangeNotifier {
   final OrderService _orderService = OrderService();
   final CloudinaryService _cloudinaryService = CloudinaryService();
   final LogService _logService = LogService();
+  final CategoryService _categoryService = CategoryService();
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   List<UserModel> _users = [];
   List<ProductModel> _products = [];
   List<OrderModel> _orders = [];
   List<UserModel> _pendingSellers = [];
   List<ProductModel> _pendingProducts = [];
+  List<CategoryModel> _categories = [];
 
   bool _isLoading = false;
   String? _error;
@@ -31,6 +37,7 @@ class AdminProvider extends ChangeNotifier {
   List<OrderModel> get orders => _orders;
   List<UserModel> get pendingSellers => _pendingSellers;
   List<ProductModel> get pendingProducts => _pendingProducts;
+  List<CategoryModel> get categories => _categories;
   
   int get totalBuyers => _users.where((u) => u.role == UserRole.buyer).length;
   int get totalSellers => _users.where((u) => u.role == UserRole.seller).length;
@@ -48,13 +55,15 @@ class AdminProvider extends ChangeNotifier {
         _orderService.getAllOrders(),
         _authService.getPendingSellers(),
         _productService.getPendingProducts(),
+        _categoryService.getCategories(),
       ]);
 
-      _users = results[0] as List<UserModel>;
-      _products = results[1] as List<ProductModel>;
-      _orders = results[2] as List<OrderModel>;
-      _pendingSellers = results[3] as List<UserModel>;
-      _pendingProducts = results[4] as List<ProductModel>;
+      _users = List<UserModel>.from(results[0] as Iterable);
+      _products = List<ProductModel>.from(results[1] as Iterable);
+      _orders = List<OrderModel>.from(results[2] as Iterable);
+      _pendingSellers = List<UserModel>.from(results[3] as Iterable);
+      _pendingProducts = List<ProductModel>.from(results[4] as Iterable);
+      _categories = List<CategoryModel>.from(results[5] as Iterable);
 
       _error = null;
     } catch (e) {
@@ -244,6 +253,72 @@ class AdminProvider extends ChangeNotifier {
       _error = e.toString();
       return false;
     }
+  }
+
+  /// Manage Categories
+  Future<bool> addCategory(CategoryModel category) async {
+    try {
+      await _categoryService.addCategory(category);
+      await loadDashboardData();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    }
+  }
+
+  Future<bool> updateCategory(CategoryModel category) async {
+    try {
+      await _categoryService.updateCategory(category);
+      await loadDashboardData();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    }
+  }
+
+  Future<bool> deleteCategory(String id) async {
+    try {
+      await _categoryService.deleteCategory(id);
+      await loadDashboardData();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    }
+  }
+
+  Future<void> seedDefaultCategories() async {
+    if (_categories.isNotEmpty) return;
+    
+    final defaults = [
+      {'name': 'Electronics', 'icon': '📱', 'subs': ['Mobile', 'Laptops', 'Accessories']},
+      {'name': 'Fashion', 'icon': '👗', 'subs': ['Men', 'Women', 'Kids']},
+      {'name': 'Home', 'icon': '🏠', 'subs': ['Furniture', 'Decor', 'Kitchen']},
+      {'name': 'Pharmacy', 'icon': '💊', 'subs': ['Medicines', 'Personal Care', 'First Aid']},
+    ];
+
+    for (var i = 0; i < defaults.length; i++) {
+      final main = defaults[i];
+      final mainId = await _db.collection('categories').add({
+        'name': main['name'],
+        'icon': main['icon'],
+        'order': i,
+        'parentId': null,
+      });
+
+      final subs = main['subs'] as List<String>;
+      for (var j = 0; j < subs.length; j++) {
+        await _db.collection('categories').add({
+          'name': subs[j],
+          'icon': '🔹',
+          'order': j,
+          'parentId': mainId.id,
+        });
+      }
+    }
+    await loadDashboardData();
   }
 
   /// Manage Orders

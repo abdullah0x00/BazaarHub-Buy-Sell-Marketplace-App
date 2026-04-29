@@ -248,7 +248,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         const Text('Category', style: TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
                         const SizedBox(height: 6),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedCategory,
+                          value: _selectedCategory,
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.divider)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

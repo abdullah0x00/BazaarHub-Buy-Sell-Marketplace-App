@@ -267,7 +267,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   void _showProfileDialog(BuildContext context) {
-    final admin = context.read<AdminProvider>().users.firstWhere((u) => u.role == UserRole.admin, orElse: () => UserModel(id: 'admin', name: 'Admin', email: 'admin@bazaarhub.com', createdAt: DateTime.now(), role: UserRole.admin));
+    final admin = context.read<AuthProvider>().currentUser!;
     final nameCtrl = TextEditingController(text: admin.name);
     final emailCtrl = TextEditingController(text: admin.email);
 

@@ -181,7 +181,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedCategory,
+                      value: _selectedCategory,
                       decoration: InputDecoration(
                         labelText: 'Category',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
