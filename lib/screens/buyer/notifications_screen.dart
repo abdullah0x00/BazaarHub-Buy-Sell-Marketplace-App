@@ -39,9 +39,40 @@ class NotificationsScreen extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const LoadingWidget();
           }
-          
+
+          // Show error message if there's an error
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Failed to load notifications',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Refresh the stream
+                      (context as Element).markNeedsBuild();
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
           final notifications = snapshot.data ?? [];
-          
+
           if (notifications.isEmpty) {
             return const EmptyStateWidget(
               icon: Icons.notifications_none_rounded,
@@ -50,13 +81,19 @@ class NotificationsScreen extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: notifications.length,
-            itemBuilder: (ctx, i) {
-              final n = notifications[i];
-              return _NotificationTile(notification: n);
+          return RefreshIndicator(
+            onRefresh: () async {
+              // Trigger stream refresh
+              await Future.delayed(const Duration(milliseconds: 500));
             },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: notifications.length,
+              itemBuilder: (ctx, i) {
+                final n = notifications[i];
+                return _NotificationTile(notification: n);
+              },
+            ),
           );
         },
       ),
@@ -70,6 +107,11 @@ class _NotificationTile extends StatelessWidget {
 
   String _getIcon(String type) {
     switch (type) {
+      case 'order_pending': return 'P';
+      case 'order_confirmed': return 'C';
+      case 'order_shipped': return 'S';
+      case 'order_delivered': return 'D';
+      case 'order_cancelled': return 'X';
       case 'order': return '🎉';
       case 'promo': return '⚡';
       case 'product_approval': return '📦';

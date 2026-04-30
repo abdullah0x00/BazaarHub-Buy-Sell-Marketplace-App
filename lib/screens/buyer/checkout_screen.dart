@@ -119,10 +119,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (mounted) {
         setState(() => _isPlacingOrder = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text(_friendlyOrderError(e)),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
+  }
+
+  String _friendlyOrderError(Object error) {
+    final message = error.toString();
+    if (message.contains('not-found')) {
+      return 'Some cart items are no longer available. Please refresh your cart and try again.';
+    }
+    if (message.contains('cart is empty')) {
+      return 'Your cart is empty.';
+    }
+    return 'Could not place order. Please try again.';
   }
 
   @override

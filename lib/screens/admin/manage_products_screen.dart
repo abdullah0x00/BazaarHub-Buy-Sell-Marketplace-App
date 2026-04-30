@@ -127,7 +127,7 @@ class _AdminProductTile extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
+            child: product.coverImage.isNotEmpty ? Image.network(
               product.coverImage,
               width: 70,
               height: 70,
@@ -138,7 +138,12 @@ class _AdminProductTile extends StatelessWidget {
                 color: AppColors.azureSurface,
                 child: const Icon(Icons.image_outlined, color: AppColors.azure),
               ),
-            ),
+            ) : Container(
+                width: 70,
+                height: 70,
+                color: AppColors.azureSurface,
+                child: const Icon(Icons.image_outlined, color: AppColors.azure),
+              ),
           ),
           const SizedBox(width: 14),
           Expanded(

@@ -245,13 +245,22 @@ class AdminProvider extends ChangeNotifier {
   }
 
   Future<bool> updateAdminProfile(UserModel admin) async {
+    _setLoading(true);
+    _error = null;
     try {
       await _authService.updateProfile(admin);
+      // Update the user in the local list if present
+      final idx = _users.indexWhere((u) => u.id == admin.id);
+      if (idx != -1) {
+        _users[idx] = admin;
+      }
       notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,6 +20,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
+  Timer? _searchDebounce;
   bool _showFilters = false;
   final String _sortBy = 'Popularity';
 
@@ -48,13 +50,19 @@ class _SearchScreenState extends State<SearchScreen> {
         _onSearch(widget.initialQuery!);
       }
       if (widget.triggerCamera) {
-        Future.delayed(const Duration(milliseconds: 300), () => _openImageSearch());
+        // Delay to ensure screen is fully loaded before opening camera
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _openImageSearch();
+          }
+        });
       }
     });
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
@@ -63,6 +71,22 @@ class _SearchScreenState extends State<SearchScreen> {
     if (query.trim().isEmpty) return;
     context.read<ProductProvider>().search(query);
     setState(() {});
+  }
+
+  void _onQueryChanged(String query) {
+    setState(() {});
+    _searchDebounce?.cancel();
+
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      context.read<ProductProvider>().search('');
+      return;
+    }
+
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      context.read<ProductProvider>().search(trimmed);
+    });
   }
 
   void _openScanner() async {
@@ -79,19 +103,54 @@ class _SearchScreenState extends State<SearchScreen> {
   void _openImageSearch() async {
     final messenger = ScaffoldMessenger.of(context);
     final picker = ImagePicker();
-    
+
     try {
-      final image = await picker.pickImage(source: ImageSource.camera);
-      if (image != null) {
-        messenger.showSnackBar(const SnackBar(content: Text('Analyzing image...')));
+      // Show loading indicator
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Opening camera...'),
+        duration: Duration(seconds: 1),
+      ));
+
+      final image = await picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        imageQuality: 80,
+      );
+
+      if (image != null && mounted) {
+        messenger.showSnackBar(const SnackBar(
+          content: Text('Analyzing image...'),
+          duration: Duration(seconds: 1),
+        ));
+
         // Simulate finding an object in image
-        Future.delayed(const Duration(seconds: 1), () {
-           _ctrl.text = "Watch";
-           _onSearch("Watch");
-        });
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (!mounted) return;
+
+        // Show success and search
+        _ctrl.text = "Watch";
+        _onSearch("Watch");
+
+        messenger.showSnackBar(const SnackBar(
+          content: Text('Found: Watch - Showing results'),
+          duration: Duration(seconds: 2),
+        ));
       }
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Camera error: $e')));
+      if (mounted) {
+        String errorMsg = 'Camera error: $e';
+        if (e.toString().contains('permission') || e.toString().contains('denied')) {
+          errorMsg = 'Camera permission denied. Please enable camera access in settings.';
+        } else if (e.toString().contains('not available')) {
+          errorMsg = 'Camera not available on this device.';
+        }
+        messenger.showSnackBar(SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ));
+      }
     }
   }
 
@@ -128,21 +187,24 @@ class _SearchScreenState extends State<SearchScreen> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                   if (_ctrl.text.isNotEmpty) 
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18), 
-                        onPressed: () { _ctrl.clear(); setState(() {}); }
-                      ),
-                   IconButton(
-                     icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20), 
-                     onPressed: _openImageSearch
-                   ),
-                   const SizedBox(width: 4),
+                  if (_ctrl.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        _ctrl.clear();
+                        _onQueryChanged('');
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 20),
+                    onPressed: _openImageSearch,
+                  ),
+                  const SizedBox(width: 4),
                 ],
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
             ),
-            onChanged: (v) => setState(() {}),
+            onChanged: _onQueryChanged,
             onSubmitted: _onSearch,
           ),
         ),

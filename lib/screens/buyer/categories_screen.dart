@@ -66,7 +66,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       borderRadius: BorderRadius.circular(10),
                       border: isSelected
                           ? Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                             )
                           : null,
                     ),

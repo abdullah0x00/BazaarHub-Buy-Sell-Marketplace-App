@@ -63,6 +63,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithBiometrics() async {
+    final auth = context.read<AuthProvider>();
+    final success = await auth.biometricLogin();
+    if (!mounted) return;
+
+    if (success) {
+      final userId = auth.currentUser!.id;
+      context.read<CartProvider>().setUserId(userId);
+      context.read<ProductProvider>().loadWishlist(userId);
+
+      if (auth.isAdmin) {
+        Navigator.pushReplacementNamed(context, AppRoutes.adminDashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.main);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.error ?? 'Biometric login failed'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -163,6 +188,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: auth.isLoading,
                   onPressed: _login,
                 ),
+                if (auth.biometricEnabled) ...[
+                  const SizedBox(height: 12),
+                  CustomButton(
+                    text: 'Login with Fingerprint',
+                    outlined: true,
+                    icon: Icons.fingerprint_rounded,
+                    onPressed: auth.isLoading ? null : _loginWithBiometrics,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 // Google Sign In
                 CustomButton(
@@ -203,10 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.register,
-                      ),
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.register),
                       child: const Text(
                         'Register',
                         style: TextStyle(

@@ -139,7 +139,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         height: 110,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 3),
+                          border: Border.all(color: AppColors.primary.withOpacity(0.1), width: 3),
                         ),
                         child: ClipOval(
                           child: _pickedImage != null

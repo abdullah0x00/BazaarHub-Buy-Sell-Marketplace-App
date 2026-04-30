@@ -9,14 +9,15 @@ class MarketplaceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
+    return Selector<AuthProvider, bool>(
+      selector: (_, authProvider) => authProvider.isDarkMode,
+      builder: (context, isDarkMode, _) {
         return MaterialApp(
           title: 'BazaarHub - Buy & Sell Marketplace',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          themeMode: authProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
           initialRoute: AppRoutes.splash,
           onGenerateRoute: AppRoutes.generateRoute,
         );

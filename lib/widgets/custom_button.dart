@@ -63,7 +63,7 @@ class CustomButton extends StatelessWidget {
         style: theme.elevatedButtonTheme.style?.copyWith(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return buttonColor.withValues(alpha: 0.5);
+              return buttonColor.withOpacity(0.5);
             }
             return buttonColor;
           }),

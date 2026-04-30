@@ -88,6 +88,11 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFFF4511E)),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.chatList),
+            tooltip: 'Messages',
+          ),
+          IconButton(
             icon: const Icon(Icons.sync_rounded, color: Color(0xFFF4511E)),
             onPressed: _load,
           ),

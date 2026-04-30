@@ -28,7 +28,9 @@ void main() async {
 
     // Clear data on every start to begin from onboarding
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    if (const bool.fromEnvironment('RESET_PREFS', defaultValue: false)) {
+      await prefs.clear();
+    }
 
     // Lock orientation to portrait
     await SystemChrome.setPreferredOrientations([

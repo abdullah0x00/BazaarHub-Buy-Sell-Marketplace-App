@@ -139,7 +139,7 @@ class UserModel {
       UserModel(
         id: 'admin_1',
         name: 'Super Admin',
-        email: 'admin@bazaarhub.com', // Admin specific email
+        email: 'abdullah@gmail.com', // Admin specific email
         role: UserRole.admin,
         createdAt: DateTime.now().subtract(const Duration(days: 365)),
       ),

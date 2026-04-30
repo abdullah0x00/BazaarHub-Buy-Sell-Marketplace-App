@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
@@ -21,6 +22,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Timer? _timer;
   Duration _timeLeft = const Duration(hours: 2, minutes: 45, seconds: 10);
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  Stream<int> _getUnreadNotificationCount(String userId) async* {
+    if (userId.isEmpty) {
+      yield 0;
+      return;
+    }
+    final db = FirebaseFirestore.instance;
+    // Get all notifications for user + admin, then filter unread on client side
+    // (Firestore doesn't support multiple whereIn with other where clauses)
+    yield* db
+        .collection('notifications')
+        .where('userId', whereIn: [userId, 'admin'])
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .where((doc) => doc.data()['isRead'] == false)
+          .length;
+    });
+  }
 
   @override
   void initState() {
@@ -46,9 +67,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _searchCtrl.dispose();
     super.dispose();
   }
-  
+
+  void _openSearch({bool triggerCamera = false}) {
+    final query = _searchCtrl.text.trim();
+    Navigator.pushNamed(
+      context,
+      AppRoutes.search,
+      arguments: {
+        if (query.isNotEmpty) 'query': query,
+        if (triggerCamera) 'triggerCamera': true,
+      },
+    );
+  }
+
   // Custom manual format to fix the string interpolation issue in logic
   String _getTimerText() {
     int h = _timeLeft.inHours;
@@ -62,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = context.watch<AuthProvider>();
     final products = context.watch<ProductProvider>();
     final allProducts = products.products;
- 
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -205,9 +239,45 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.notifications),
-            icon: const Icon(Icons.notifications_none_outlined, size: 26),
+          StreamBuilder<int>(
+            stream: _getUnreadNotificationCount(auth.currentUser?.id ?? ''),
+            builder: (context, snapshot) {
+              final count = snapshot.data ?? 0;
+              return Stack(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.notifications),
+                    icon: const Icon(Icons.notifications_none_outlined, size: 26),
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Center(
+                          child: Text(
+                            count > 99 ? '99+' : '$count',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(width: 4),
           GestureDetector(
@@ -229,30 +299,40 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: GestureDetector(
-        onTap: () => Navigator.pushNamed(context, AppRoutes.search),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.search, color: Colors.grey, size: 22),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text('Search for anything...', style: TextStyle(color: Colors.grey, fontSize: 14)),
-              ),
-              VerticalDivider(indent: 12, endIndent: 12, color: Colors.grey[300]),
-              IconButton(
-              icon: const Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: 20),
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.search, arguments: {'triggerCamera': true}),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+        ),
+        child: TextField(
+          controller: _searchCtrl,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _openSearch(),
+          decoration: InputDecoration(
+            hintText: 'Search for anything...',
+            hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            prefixIcon: IconButton(
+              icon: const Icon(Icons.search, color: Colors.grey, size: 22),
+              onPressed: () => _openSearch(),
             ),
-            ],
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                VerticalDivider(indent: 12, endIndent: 12, color: Colors.grey[300]),
+                IconButton(
+                  icon: const Icon(Icons.camera_alt_outlined, color: AppColors.primary, size: 20),
+                  onPressed: () => _openSearch(triggerCamera: true),
+                ),
+              ],
+            ),
           ),
+          onTapOutside: (_) => FocusScope.of(context).unfocus(),
         ),
       ),
     );

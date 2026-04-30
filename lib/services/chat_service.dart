@@ -81,12 +81,18 @@ class ChatService {
 
   /// Get user chats stream
   Stream<List<ChatModel>> getUserChats(String userId) {
-    return _db.collection('chats')
+    // Note: `where(arrayContains) + orderBy` often requires a composite index.
+    // To avoid "failed-precondition" / index issues, we fetch then sort locally.
+    return _db
+        .collection('chats')
         .where('participants', arrayContains: userId)
-        .orderBy('lastMessageTime', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => ChatModel.fromJson(doc.data(), doc.id))
-            .toList());
+        .map((snapshot) {
+          final chats = snapshot.docs
+              .map((doc) => ChatModel.fromJson(doc.data(), doc.id))
+              .toList();
+          chats.sort((a, b) => b.lastMessageTime.compareTo(a.lastMessageTime));
+          return chats;
+        });
   }
 }

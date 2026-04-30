@@ -7,6 +7,8 @@ class ProductService {
   factory ProductService() => _instance;
   ProductService._internal();
 
+  static const String demoSellerId = 's1';
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final List<ProductModel> _mockProducts = ProductModel.mockProducts();
 
@@ -69,10 +71,17 @@ class ProductService {
       final snapshot = await _db.collection('products')
           .where('sellerId', isEqualTo: sellerId)
           .get();
-      return snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+      final realProducts = snapshot.docs.map((doc) => _productFromDoc(doc)).toList();
+      return _withDemoSellerProducts(realProducts);
     } catch (e) {
-      return [];
+      return _withDemoSellerProducts([]);
     }
+  }
+
+  List<ProductModel> _withDemoSellerProducts(List<ProductModel> realProducts) {
+    final existingIds = realProducts.map((p) => p.id).toSet();
+    final demoProducts = _mockProducts.where((p) => !existingIds.contains(p.id));
+    return [...realProducts, ...demoProducts];
   }
 
   Future<List<ProductModel>> getFlashSaleProducts() async {
@@ -202,7 +211,11 @@ class ProductService {
   }
 
   Future<ProductModel> updateProduct(ProductModel p) async {
-    await _db.collection('products').doc(p.id).update(p.toJson());
+    final docRef = _db.collection('products').doc(p.id);
+    final doc = await docRef.get();
+    if (doc.exists) {
+      await docRef.update(p.toJson());
+    }
     return p;
   }
 

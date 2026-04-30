@@ -191,6 +191,70 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
           ),
           const Divider(height: 1),
           Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 2),
+            child: Column(
+              children: widget.order.items
+                  .map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: item.productImage.isNotEmpty
+                                ? Image.network(
+                                    item.productImage,
+                                    width: 38,
+                                    height: 38,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => _ProductImageFallback(),
+                                  )
+                                : _ProductImageFallback(),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.productTitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '${item.quantity} x PKR ${_fmt(item.price)}',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'PKR ${_fmt(item.subtotal)}',
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -248,6 +312,18 @@ class _SellerOrderCardState extends State<_SellerOrderCard> {
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
         (m) => '${m[1]},',
       );
+}
+
+class _ProductImageFallback extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 38,
+      color: AppColors.azureSurface,
+      child: const Icon(Icons.image_outlined, color: AppColors.azure, size: 18),
+    );
+  }
 }
 
 class _StatusBadge extends StatelessWidget {

@@ -16,7 +16,7 @@ class AppConstants {
   static const String keyBiometric = 'biometric_enabled';
 
   // Demo Admin Credentials
-  static const String adminEmail = 'admin@bazaarhub.com';
+  static const String adminEmail = 'admin12@bazaarhub.com';
   static const String adminPassword = 'Admin@123';
 
   // Pagination

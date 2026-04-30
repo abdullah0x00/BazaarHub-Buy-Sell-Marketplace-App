@@ -125,6 +125,40 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Login using biometrics (unlocks previously saved session)
+  Future<bool> biometricLogin() async {
+    _setLoading(true);
+    _error = null;
+    try {
+      if (!_biometricEnabled) {
+        _error = 'Biometric login is not enabled';
+        return false;
+      }
+
+      final authenticated = await _securityService.authenticate();
+      if (!authenticated) {
+        _error = 'Biometric authentication failed';
+        return false;
+      }
+
+      final savedUser = await _authService.getSavedUser();
+      if (savedUser == null) {
+        _error = 'No saved session found. Please login with password once.';
+        return false;
+      }
+
+      _currentUser = savedUser;
+      await _securityService.logLogin(savedUser.id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// Register
   Future<bool> register(String name, String email, String password) async {
     _setLoading(true);
@@ -259,6 +293,19 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Refresh current user data from storage (useful when profile is updated elsewhere)
+  Future<void> refreshUser() async {
+    try {
+      final savedUser = await _authService.getSavedUser();
+      if (savedUser != null) {
+        _currentUser = savedUser;
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
+    }
+  }
+
   /// Complete onboarding step
   Future<void> completeOnboardingStep(String step) async {
     if (_currentUser == null) return;
@@ -274,7 +321,8 @@ class AuthProvider extends ChangeNotifier {
 
   /// Logout
   Future<void> logout() async {
-    await _authService.logout();
+    // If biometric is enabled, keep local session so user can re-enter with fingerprint.
+    await _authService.logout(keepLocalSession: _biometricEnabled);
     _currentUser = null;
     notifyListeners();
   }

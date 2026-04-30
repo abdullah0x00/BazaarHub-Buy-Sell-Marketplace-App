@@ -1,7 +1,7 @@
 name: marketplace_app
 description: A professional Buy & Sell Marketplace App built with Flutter.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -57,9 +57,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/App icon.jpeg"
+  image_path: "assets/images/app_icon_enhanced.png"
   adaptive_icon_background: "#0072BB"
-  adaptive_icon_foreground: "assets/images/App icon.jpeg"
+  adaptive_icon_foreground: "assets/images/app_icon_enhanced.png"
   min_sdk_android: 21
 
 flutter:

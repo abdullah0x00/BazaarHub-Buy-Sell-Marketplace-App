@@ -54,8 +54,8 @@ class LoginHistoryScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: log['platform'] == 'android' 
-                            ? Colors.green.withValues(alpha: 0.1) 
-                            : Colors.blue.withValues(alpha: 0.1),
+                            ? Colors.green.withOpacity(0.1) 
+                            : Colors.blue.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

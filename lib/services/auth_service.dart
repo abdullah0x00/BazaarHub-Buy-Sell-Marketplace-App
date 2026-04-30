@@ -96,7 +96,7 @@ class AuthService {
           UserModel user = UserModel.fromJson(doc.data()!);
           
           // Safety check for admin email
-          if (user.email.toLowerCase().trim() == 'admin@bazaarhub.com' && user.role != UserRole.admin) {
+          if (user.email.toLowerCase().trim() == 'abdullah@gmail.com' && user.role != UserRole.admin) {
             user = user.copyWith(role: UserRole.admin);
             await _db.collection('users').doc(user.id).update({'role': 'admin'});
           }
@@ -110,7 +110,7 @@ class AuthService {
             email: firebaseUser.email ?? '',
             avatar: firebaseUser.photoURL,
             createdAt: DateTime.now(),
-            role: firebaseUser.email?.toLowerCase().trim() == 'admin@bazaarhub.com' ? UserRole.admin : UserRole.buyer,
+            role: firebaseUser.email?.toLowerCase().trim() == 'abdullah@gmail.com' ? UserRole.admin : UserRole.buyer,
           );
           await _db.collection('users').doc(newUser.id).set(newUser.toJson());
           await _saveUser(newUser);
@@ -140,7 +140,7 @@ class AuthService {
           UserModel user = UserModel.fromJson(doc.data()!);
           
           // Safety check: ensure admin email always has admin role
-          if (user.email.toLowerCase().trim() == 'admin@bazaarhub.com' && user.role != UserRole.admin) {
+          if (user.email.toLowerCase().trim() == 'abdullah@gmail.com' && user.role != UserRole.admin) {
             user = user.copyWith(role: UserRole.admin);
             // Optionally update database too
             await _db.collection('users').doc(user.id).update({'role': 'admin'});
@@ -185,7 +185,7 @@ class AuthService {
         name: name,
         email: email.toLowerCase().trim(),
         createdAt: DateTime.now(),
-        role: email.toLowerCase().trim() == 'admin@bazaarhub.com' ? UserRole.admin : UserRole.buyer,
+        role: email.toLowerCase().trim() == 'abdullah@gmail.com' ? UserRole.admin : UserRole.buyer,
       );
 
       await _db.collection('users').doc(newUser.id).set(newUser.toJson());
@@ -277,11 +277,13 @@ class AuthService {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout({bool keepLocalSession = false}) async {
     await _auth.signOut();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.keyUserData);
-    await prefs.remove(AppConstants.keyAuthToken);
+    if (!keepLocalSession) {
+      await prefs.remove(AppConstants.keyUserData);
+      await prefs.remove(AppConstants.keyAuthToken);
+    }
   }
 
   Future<UserModel?> getSavedUser() async {

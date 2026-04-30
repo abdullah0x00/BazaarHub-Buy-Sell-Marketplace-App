@@ -189,7 +189,7 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     onTap: onTap,
-    leading: CircleAvatar(backgroundColor: labelColor?.withValues(alpha: 0.1) ?? AppColors.azureSurface, radius: 18, child: Icon(icon, color: labelColor ?? AppColors.azure, size: 18)),
+    leading: CircleAvatar(backgroundColor: labelColor?.withOpacity(0.1) ?? AppColors.azureSurface, radius: 18, child: Icon(icon, color: labelColor ?? AppColors.azure, size: 18)),
     title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: labelColor)),
     subtitle: subtitle != null ? Text(subtitle!, style: const TextStyle(fontSize: 11, color: Colors.grey)) : null,
     trailing: const Icon(Icons.chevron_right, size: 18, color: Colors.grey),

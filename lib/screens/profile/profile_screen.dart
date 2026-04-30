@@ -273,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               context, AppRoutes.sellerAnalytics)),
                   ]),
 
-                  if (user?.isAdmin == true || user?.email == 'admin@bazaarhub.com') ...[
+                  if (user?.isAdmin == true || user?.email == 'abdullah@gmail.com') ...[
                     const SizedBox(height: 20),
                     _buildSectionTitle('Platform Administration'),
                     _buildMenuCard([
